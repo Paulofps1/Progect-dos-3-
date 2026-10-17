@@ -60,3 +60,7 @@ create policy "desafio_desafios: responder" on public.desafio_desafios
 drop policy if exists "desafio_desafios: apagar" on public.desafio_desafios;
 create policy "desafio_desafios: apagar" on public.desafio_desafios
   for delete to authenticated using (true);
+
+-- acesso das contas logadas (as políticas acima é que limitam o que cada um vê)
+grant select, insert, update, delete on public.desafio_dados to authenticated;
+grant select, insert, update, delete on public.desafio_desafios to authenticated;
