@@ -62,6 +62,9 @@ export const fmtHours = (h: number) => {
   return `${Math.floor(total / 60)}h${m ? String(m).padStart(2, '0') : ''}`;
 };
 
+/** 1ª dose, aplicada pelos 3 juntos antes do início; entra no registro de cada um. */
+export const FIRST_DOSE: Injection = { date: '2026-10-16', ml: 2.5, note: '1ª dose' };
+
 export const INJECTION_SITES = ['Abdômen', 'Coxa esq.', 'Coxa dir.', 'Braço esq.', 'Braço dir.'];
 
 // ---------- datas ("YYYY-MM-DD" no fuso do aparelho) ----------

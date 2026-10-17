@@ -3,9 +3,10 @@ import { format, subDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { localDesafio } from '@/lib/desafio/localStore';
-import { loadMine, saveMine, type Kind } from '@/lib/desafio/remote';
+import { IS_DEMO, loadMine, saveMine, type Kind } from '@/lib/desafio/remote';
 import {
   DEFAULT_WATER_GOAL_ML,
+  FIRST_DOSE,
   JOKERS,
   PLAYERS,
   playerFromName,
@@ -83,6 +84,24 @@ export function useDesafio() {
       sync('injections', localDesafio.getInjections(userId), (v) => !v.length, (v) => setInjections(v), (v) => localDesafio.setInjections(userId, v));
       sync('sleep', localDesafio.getSleep(userId), (v) => !v.length, (v) => setSleep(v), (v) => localDesafio.setSleep(userId, v));
       sync('next_injection', localDesafio.getNextInjection(userId), (v) => !v, (v) => setNextInj(v), (v) => localDesafio.setNextInjection(userId, v));
+    }
+    // 1ª dose dos 3 (16/10): registra uma vez só; se a pessoa apagar, não volta
+    const seedKey = `desafio:${userId}:1a-dose`;
+    // (só depois de ler o banco, para não sobrescrever o que já está lá)
+    if ((mine || IS_DEMO) && !localStorage.getItem(seedKey)) {
+      const list = localDesafio.getInjections(userId);
+      if (!list.some((i) => i.date === FIRST_DOSE.date)) {
+        const next = [...list, FIRST_DOSE].sort((a, b) => (a.date < b.date ? 1 : -1));
+        setInjections(next);
+        localDesafio.setInjections(userId, next);
+        localDesafio.setPending(userId, 'injections', true);
+        saveMine(userId, localDesafio.getPlayer(userId), 'injections', next).then((ok) => ok && localDesafio.setPending(userId, 'injections', false));
+      }
+      try {
+        localStorage.setItem(seedKey, '1');
+      } catch {
+        /* tenta de novo na próxima */
+      }
     }
     const byDay: Record<string, number> = {};
     for (const r of w.data || []) byDay[r.date] = (byDay[r.date] || 0) + (r.amount_ml || 0);
