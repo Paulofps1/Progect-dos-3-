@@ -34,7 +34,7 @@ const DesktopSidebar = () => {
       label: 'Treino',
       items: [
         { id: 'workouts', icon: Dumbbell, label: 'Treinos', path: '/workouts' },
-        { id: 'noite', icon: Moon, label: 'Noite', path: '/noite' },
+        { id: 'noite', icon: Moon, label: 'Sono', path: '/noite' },
       ],
     },
     {

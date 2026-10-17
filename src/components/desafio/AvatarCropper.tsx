@@ -129,7 +129,7 @@ export function AvatarCropper({ file, onCancel, onSaved }: Props) {
         </button>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 w-full max-w-[280px] mt-6">
+      <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="flex gap-3 w-full max-w-[280px] mt-6">
         <Button variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={onCancel} disabled={saving}>
           Cancelar
         </Button>

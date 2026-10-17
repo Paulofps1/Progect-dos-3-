@@ -77,7 +77,7 @@ const Workouts = () => {
 
   return (
     <AppLayout activeNav="home" showNav>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <SectionHeader
           title="Treinos"
           subtitle="Marque os dias que você foi pra academia"
@@ -87,7 +87,7 @@ const Workouts = () => {
 
         <div className="px-4 sm:px-6 lg:px-8 space-y-5 mt-4">
           {/* Hoje */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }}
             className={`rounded-3xl border p-5 ${trainedToday ? 'bg-primary/10 border-primary/20' : 'bg-card border-border'}`}>
             <p className="text-xs text-muted-foreground first-letter:uppercase">
               {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}

@@ -88,7 +88,7 @@ const EditProfile = () => {
     <AppLayout activeNav="profile" showNav={false}>
       {cropFile && <AvatarCropper file={cropFile} onCancel={() => setCropFile(null)} onSaved={handleCropped} />}
       <motion.div 
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         className="min-h-screen pb-8"
       >
@@ -101,7 +101,7 @@ const EditProfile = () => {
         <div className="px-4 sm:px-6 max-w-lg mx-auto space-y-6">
           {/* Avatar Section */}
           <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={false}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="flex justify-center"
@@ -148,7 +148,7 @@ const EditProfile = () => {
 
           {/* Form */}
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
+            initial={false}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="glass-card rounded-2xl p-5 space-y-4"
@@ -171,7 +171,7 @@ const EditProfile = () => {
 
           {/* Save Button */}
           <motion.div 
-            initial={{ y: 20, opacity: 0 }}
+            initial={false}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >

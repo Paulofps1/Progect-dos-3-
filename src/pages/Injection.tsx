@@ -58,7 +58,7 @@ const Injection = () => {
 
   return (
     <AppLayout activeNav="home">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <SectionHeader title="Injeção" subtitle="Registro das suas aplicações" backTo="/dashboard" icon={<Syringe className="w-5 h-5 text-indigo-500" />} />
 
         <div className="px-4 sm:px-6 lg:px-8 space-y-5 mt-6 max-w-2xl mx-auto">

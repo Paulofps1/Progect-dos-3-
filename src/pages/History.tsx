@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, History as HistoryIcon, Scale, Syringe, Utensils } from 'lucide-react';
+import { ChevronDown, History as HistoryIcon, Scale, Syringe, Utensils, Moon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AppLayout from '@/components/app/AppLayout';
@@ -10,12 +10,12 @@ import { TONES } from '@/components/desafio/tones';
 import { useAuth } from '@/hooks/useAuth';
 import { useDesafio } from '@/hooks/useDesafio';
 import { supabase } from '@/integrations/supabase/client';
-import { CORE, START, dayPercent, dayPoints, habitDone, isPerfect, isSunday, num, parseYmd, ymd, type DayRecord, type HabitKey } from '@/lib/desafio/rules';
+import { CORE, START, dayPercent, dayPoints, fmtHours, habitDone, isPerfect, isSunday, num, parseYmd, ymd, type DayRecord, type HabitKey } from '@/lib/desafio/rules';
 
 // Meu histórico: um dia por linha, do mais novo ao mais antigo. Tocar abre o
 // que aconteceu no dia (refeições, água, treino, injeção, pesagem).
 
-type MealRow = { id: string; date: string; name: string; total_calories: number | null };
+type MealRow = { id: string; date: string; name: string; time: string | null };
 type Filter = 'todos' | 'perfeitos' | 'abertos';
 const SHOWN: HabitKey[] = ['agua', 'treino', 'comida', 'doce', 'cardio', 'proteina', 'passos', 'inj'];
 
@@ -33,7 +33,7 @@ const History = () => {
 
   // dias do mais novo ao mais antigo: desde o início do desafio, ou antes se já houver registro
   const allDays = useMemo(() => {
-    const known = [...Object.keys(d.days), ...meals.map((m) => m.date), ...d.weights.map((w) => w.date)].filter((x) => x <= d.today).sort();
+    const known = [...Object.keys(d.days), ...meals.map((m) => m.date), ...d.weights.map((w) => w.date), ...d.sleep.map((x) => x.date)].filter((x) => x <= d.today).sort();
     const first = known[0] && known[0] < START ? known[0] : START;
     const out: string[] = [];
     const cur = parseYmd(d.today);
@@ -42,13 +42,13 @@ const History = () => {
       cur.setDate(cur.getDate() - 1);
     }
     return out;
-  }, [d.days, d.today, d.weights, meals]);
+  }, [d.days, d.today, d.weights, d.sleep, meals]);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from('meals')
-      .select('id, date, name, total_calories')
+      .select('id, date, name, time')
       .eq('user_id', user.id)
       .gte('date', format(new Date(Date.now() - 120 * 864e5), 'yyyy-MM-dd'))
       .order('created_at', { ascending: true })
@@ -62,6 +62,7 @@ const History = () => {
   }, [meals]);
   const weightByDay = new Map(d.weights.map((w) => [w.date, w.kg]));
   const injByDay = new Map(d.injections.map((i) => [i.date, i]));
+  const sleepByDay = new Map(d.sleep.filter((x) => !x.nap).map((x) => [x.date, x]));
 
   const days = allDays.filter((day) => {
     const r = d.record(day);
@@ -75,7 +76,7 @@ const History = () => {
 
   return (
     <AppLayout activeNav="profile">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <SectionHeader title="Meu histórico" subtitle="Tudo o que você registrou, dia a dia" backTo="/profile" icon={<HistoryIcon className="w-5 h-5 text-primary" />} />
 
         <div className="px-4 sm:px-6 lg:px-8 space-y-4 mt-6 max-w-2xl mx-auto">
@@ -121,7 +122,7 @@ const History = () => {
             {days.map((day) => {
               const r = d.record(day);
               const dayMeals = mealsByDay[day] || [];
-              const kcal = dayMeals.reduce((a, m) => a + (m.total_calories || 0), 0);
+              const slept = sleepByDay.get(day);
               const isOpen = open === day;
               return (
                 <div key={day}>
@@ -150,7 +151,7 @@ const History = () => {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-xs font-semibold text-foreground tabular-nums">{kcal ? `${kcal} kcal` : '–'}</p>
+                      <p className="text-xs font-semibold text-foreground tabular-nums">{slept ? `😴 ${fmtHours(slept.hours)}` : '–'}</p>
                       <p className="text-[10px] text-muted-foreground tabular-nums">{num(r.waterMl / 1000, 1)} L</p>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -163,15 +164,21 @@ const History = () => {
                           <Detail icon={<Utensils className="w-4 h-4 text-orange-500" />} title="Refeições">
                             {dayMeals.length ? (
                               dayMeals.map((m) => (
-                                <span key={m.id} className="flex justify-between">
-                                  <span>{m.name}</span>
-                                  <span className="tabular-nums">{m.total_calories ?? 0} kcal</span>
+                                <span key={m.id} className="flex justify-between gap-3">
+                                  <span className="min-w-0 break-words">{m.name}</span>
+                                  <span className="tabular-nums text-muted-foreground">{m.time?.slice(0, 5)}</span>
                                 </span>
                               ))
                             ) : (
                               <span>Nada registrado</span>
                             )}
                           </Detail>
+                          {slept && (
+                            <Detail icon={<Moon className="w-4 h-4 text-violet-500" />} title="Sono">
+                              {fmtHours(slept.hours)}
+                              {slept.bed && slept.wake ? ` · deitou ${slept.bed}, acordou ${slept.wake}` : ''}
+                            </Detail>
+                          )}
                           <Detail icon={<TONES.agua.icon className="w-4 h-4 text-sky-500" />} title="Água">
                             {num(r.waterMl / 1000, 2)} de {num(r.waterGoalMl / 1000, 2)} L
                           </Detail>

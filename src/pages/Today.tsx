@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Droplets, Plus, Flame, MessageCircle, ChevronRight, Utensils, Camera, UtensilsCrossed, TrendingUp, X, Dumbbell, Trophy, BarChart3, Sparkles, ScanLine, BookOpen, Users, Syringe, Swords } from 'lucide-react';
+import { Droplets, Plus, Flame, MessageCircle, ChevronRight, Utensils, Camera, UtensilsCrossed, TrendingUp, X, Dumbbell, Trophy, BarChart3, Sparkles, ScanLine, BookOpen, Users, Syringe, Swords, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/app/AppLayout';
@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDesafio } from '@/hooks/useDesafio';
 import { PlayerPicker } from '@/components/desafio/DesafioParts';
 import { DayChecklist } from '@/components/desafio/DayChecklist';
-import { DEFAULT_WATER_GOAL_ML, jokersLeftOf, num } from '@/lib/desafio/rules';
+import { DEFAULT_WATER_GOAL_ML, fmtHours, jokersLeftOf, num } from '@/lib/desafio/rules';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,17 +35,21 @@ interface Meal {
   time: string | null;
 }
 
+let lastDay: { date: string; dayData: DayData; meals: Meal[] } | null = null;
+
 const Today = () => {
   const { user, profile, loading } = useAuth();
   const desafio = useDesafio();
   const navigate = useNavigate();
   const location = useLocation();
-  const [dayData, setDayData] = useState<DayData>({
+  // ao voltar para Hoje, abre com o que já foi carregado (não pisca em zero)
+  const cached = lastDay?.date === format(new Date(), 'yyyy-MM-dd') ? lastDay : null;
+  const [dayData, setDayData] = useState<DayData>(cached?.dayData ?? {
     calories: 0, protein: 0, carbs: 0, fat: 0, water: 0,
     waterTarget: DEFAULT_WATER_GOAL_ML,
   });
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [meals, setMeals] = useState<Meal[]>(cached?.meals ?? []);
+  const [dataLoaded, setDataLoaded] = useState(!!cached);
   const [showFabSheet, setShowFabSheet] = useState(false);
   
 
@@ -53,6 +57,7 @@ const Today = () => {
   const isPremium = profile?.is_premium ?? false;
   const firstName = profile?.full_name?.split(' ')[0] || 'Usuário';
   const currentStreak = desafio.myStats?.run ?? 0;
+  const lastNight = desafio.sleep.find((s) => !s.nap && s.date === today);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -90,15 +95,18 @@ const Today = () => {
     const consumption = consumptionRes.data;
     const water = (waterRes.data || []).reduce((s: number, w: { amount_ml: number | null }) => s + (w.amount_ml || 0), 0);
 
-    setDayData({
+    const next: DayData = {
       calories: Number(consumption?.calories) || 0,
       protein: Number(consumption?.protein) || 0,
       carbs: Number(consumption?.carbs) || 0,
       fat: Number(consumption?.fat) || 0,
       water,
       waterTarget: profile?.water_goal_ml || DEFAULT_WATER_GOAL_ML,
-    });
-    setMeals((mealsRes.data as Meal[]) || []);
+    };
+    const nextMeals = (mealsRes.data as Meal[]) || [];
+    setDayData(next);
+    setMeals(nextMeals);
+    lastDay = { date: today, dayData: next, meals: nextMeals };
     setDataLoaded(true);
   }, [user, today, profile]);
 
@@ -157,12 +165,12 @@ const Today = () => {
 
   return (
     <AppLayout activeNav="home">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <div className="px-4 sm:px-6 lg:px-8 pt-6 space-y-5 w-full">
 
           {/* ── Hero Greeting ── */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/15 p-5"
           >
@@ -197,19 +205,20 @@ const Today = () => {
 
           {/* ── Metric Cards (3 cols) ── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Calorias */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              className="rounded-2xl bg-card border border-border p-4"
+            {/* Sono da última noite */}
+            <motion.button
+              initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+              onClick={() => navigate('/noite')}
+              className="rounded-2xl bg-card border border-border p-4 text-left"
             >
-              <Flame className="w-4 h-4 text-primary mb-2" />
-              <p className="text-lg font-bold text-foreground leading-none">{Math.round(dayData.calories)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">kcal hoje</p>
-            </motion.div>
+              <Moon className="w-4 h-4 text-violet-500 mb-2" />
+              <p className="text-lg font-bold text-foreground leading-none">{lastNight ? fmtHours(lastNight.hours) : '–'}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{lastNight ? 'de sono esta noite' : 'anotar o sono'}</p>
+            </motion.button>
 
             {/* Pontos do desafio */}
             <motion.button
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               onClick={() => navigate('/achievements')}
               className="rounded-2xl bg-card border border-border p-4 text-left"
             >
@@ -220,14 +229,14 @@ const Today = () => {
 
             {/* Água */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+              initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
               className="rounded-2xl bg-card border border-border p-4"
             >
               <Droplets className="w-4 h-4 text-info mb-2" />
               <p className="text-lg font-bold text-foreground leading-none">{dayData.water}<span className="text-[10px] font-normal">ml</span></p>
               <p className="text-[10px] text-muted-foreground mt-0.5">/ {dayData.waterTarget}ml</p>
               <div className="w-full h-1 bg-secondary rounded-full mt-2 overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8 }}
+                <motion.div initial={false} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8 }}
                   className="h-full rounded-full bg-info" />
               </div>
             </motion.div>
@@ -235,7 +244,7 @@ const Today = () => {
 
           {/* ── Quick Actions + Features ── */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
           >
             <div className="flex flex-wrap gap-3">
               {[
@@ -264,7 +273,7 @@ const Today = () => {
 
           {/* ── Next Meal ── */}
           <motion.button
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/meals')}
             className="w-full rounded-2xl bg-card border border-border p-4 text-left flex items-center justify-between"
@@ -284,7 +293,7 @@ const Today = () => {
 
           {/* ── Water Quick Add ── */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="rounded-2xl bg-card border border-border p-4"
           >
             <div className="flex items-center justify-between mb-3">
@@ -295,7 +304,7 @@ const Today = () => {
               <span className="text-xs font-bold text-info">{waterPct}%</span>
             </div>
             <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mb-3">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} className="h-full rounded-full bg-info" />
+              <motion.div initial={false} animate={{ width: `${waterPct}%` }} className="h-full rounded-full bg-info" />
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[200, 300, 500].map(ml => (
@@ -309,7 +318,7 @@ const Today = () => {
 
           {/* ── Today's Meals ── */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
             className="rounded-2xl bg-card border border-border p-4 motion-card"
           >
             <div className="flex items-center justify-between mb-3">
@@ -323,9 +332,7 @@ const Today = () => {
                   <div key={meal.id} className="rounded-xl p-3 bg-secondary/50 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">{meal.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {meal.total_calories} kcal · P:{meal.total_protein}g · C:{meal.total_carbs}g · G:{meal.total_fat}g
-                      </p>
+                      {meal.time && <p className="text-[10px] text-muted-foreground">{meal.time.slice(0, 5)}</p>}
                     </div>
                   </div>
                 ))}
@@ -341,7 +348,7 @@ const Today = () => {
 
           {/* ── Workout CTA ── */}
           <motion.button
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
+            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/workouts')}
             className="w-full rounded-2xl bg-detail/10 border border-detail/20 p-4 flex items-center gap-3"

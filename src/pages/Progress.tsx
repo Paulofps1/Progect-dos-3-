@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CalendarCheck, Flame, Scale, Ticket, Trash2, Utensils, Droplets, Dumbbell, Loader2 } from 'lucide-react';
+import { CalendarCheck, Flame, Scale, Ticket, Trash2, Utensils, Droplets, Dumbbell, Loader2, Moon } from 'lucide-react';
 import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AppLayout from '@/components/app/AppLayout';
@@ -20,6 +20,7 @@ import {
   dayPoints,
   daysBetween,
   fmtDay,
+  fmtHours,
   habitDone,
   isPerfect,
   isSunday,
@@ -32,7 +33,7 @@ import {
 import { toast } from 'sonner';
 
 // Resumo de tudo: pontos e andamento, mês (calendário, dia tocado e gráfico),
-// pesagens e médias de calorias, água e treinos. Marcar hábitos é em Hoje.
+// pesagens e médias de sono, água e treinos. Marcar hábitos é em Hoje.
 
 const Progress = () => {
   const { user, loading: authLoading } = useAuth();
@@ -40,31 +41,16 @@ const Progress = () => {
   const d = useDesafio();
   const [sel, setSel] = useState(d.today);
   const [month, setMonth] = useState(d.today.slice(0, 7));
-  const [kcalByDay, setKcalByDay] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('meals')
-      .select('date, total_calories')
-      .eq('user_id', user.id)
-      .gte('date', format(subDays(new Date(), 6), 'yyyy-MM-dd'))
-      .then(({ data }) => {
-        const t: Record<string, number> = {};
-        for (const r of data || []) t[r.date] = (t[r.date] || 0) + (r.total_calories || 0);
-        setKcalByDay(t);
-      });
-  }, [user]);
-
   const used = Object.values(d.days).filter((r) => r.coringa).length;
   const last7 = useMemo(() => Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), i), 'yyyy-MM-dd')), []);
   const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
-  const kcalDays = last7.filter((x) => kcalByDay[x]);
-  const avgKcal = avg(kcalDays.map((x) => kcalByDay[x]));
+  const slept7 = d.sleep.filter((s) => !s.nap && last7.includes(s.date)).map((s) => s.hours);
+  const avgSleep = slept7.length ? slept7.reduce((a, b) => a + b, 0) / slept7.length : null;
   const avgWater = avg(last7.map((x) => d.record(x).waterMl));
   const workouts7 = last7.filter((x) => d.record(x).treino).length;
 
@@ -85,7 +71,7 @@ const Progress = () => {
 
   return (
     <AppLayout activeNav="progress">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <div className="px-4 sm:px-6 pt-6 space-y-4 max-w-2xl mx-auto">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Resumo</h1>
@@ -169,7 +155,7 @@ const Progress = () => {
           <section className="bg-card rounded-3xl p-5 border border-border/30 shadow-sm">
             <h3 className="text-sm font-semibold text-foreground mb-3">Últimos 7 dias</h3>
             <div className="grid grid-cols-3 gap-3">
-              <MiniStat icon={<Utensils className="w-4 h-4 text-warning" />} value={avgKcal ? String(avgKcal) : '–'} label="kcal/dia (média)" />
+              <MiniStat icon={<Moon className="w-4 h-4 text-violet-500" />} value={avgSleep ? fmtHours(avgSleep) : '–'} label="de sono/noite" />
               <MiniStat icon={<Droplets className="w-4 h-4 text-info" />} value={num(avgWater / 1000, 1)} label="L de água/dia" />
               <MiniStat icon={<Dumbbell className="w-4 h-4 text-detail" />} value={String(workouts7)} label="treinos" />
             </div>

@@ -42,8 +42,25 @@ export type Weight = { date: string; kg: number };
 
 /** Uma aplicação registrada. Só registro: o app não sugere dose nem intervalo. */
 export type Injection = { date: string; ml?: number; site?: string; note?: string };
-/** Sono registrado na página Noite. Opcional, não vale ponto (tem quem tenha insônia). */
-export type Sleep = { id: string; date: string; hours: number; nap?: boolean };
+/**
+ * Sono registrado na página Noite: hora de deitar e de acordar; `date` é o dia em
+ * que acordou. Opcional, não vale ponto (tem quem tenha insônia).
+ */
+export type Sleep = { id: string; date: string; hours: number; bed?: string; wake?: string; nap?: boolean };
+
+/** Horas entre deitar e acordar ("23:30" → "07:00" = 7,5), passando da meia-noite. */
+export const sleepHours = (bed: string, wake: string) => {
+  const min = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const diff = (min(wake) - min(bed) + 24 * 60) % (24 * 60);
+  return Math.round((diff / 60) * 100) / 100;
+};
+
+/** "7,5" → "7h30" */
+export const fmtHours = (h: number) => {
+  const total = Math.round(h * 60);
+  const m = total % 60;
+  return `${Math.floor(total / 60)}h${m ? String(m).padStart(2, '0') : ''}`;
+};
 
 export const INJECTION_SITES = ['Abdômen', 'Coxa esq.', 'Coxa dir.', 'Braço esq.', 'Braço dir.'];
 

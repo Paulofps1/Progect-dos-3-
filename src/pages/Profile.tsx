@@ -79,7 +79,7 @@ const Profile = () => {
     <AppLayout activeNav="profile">
       {cropFile && <AvatarCropper file={cropFile} onCancel={() => setCropFile(null)} onSaved={handleCropped} />}
       <motion.div 
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         className="min-h-screen pb-28 lg:pb-8"
       >
@@ -88,7 +88,7 @@ const Profile = () => {
         <div className="px-4 sm:px-6 lg:px-8 space-y-6">
           {/* Profile Card */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="glass-card rounded-3xl p-6"
@@ -145,7 +145,7 @@ const Profile = () => {
 
           {/* Stats Cards */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
             className="grid grid-cols-2 gap-3"
@@ -169,7 +169,7 @@ const Profile = () => {
 
           {/* Menu Items */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="glass-card motion-card rounded-2xl overflow-hidden"
@@ -195,7 +195,7 @@ const Profile = () => {
 
           {/* Account Actions */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
             className="space-y-3"
@@ -215,7 +215,7 @@ const Profile = () => {
 
           {/* Version */}
           <motion.p 
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
             className="text-center text-muted-foreground text-xs pt-2 pb-4"

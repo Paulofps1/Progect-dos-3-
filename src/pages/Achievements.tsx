@@ -58,7 +58,7 @@ const Achievements = () => {
 
   return (
     <AppLayout activeNav="achievements">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <div className="px-4 sm:px-6 pt-6 space-y-4 max-w-2xl mx-auto">
           {/* Cabeçalho */}
           <div className="rounded-3xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent border border-primary/20 p-5">

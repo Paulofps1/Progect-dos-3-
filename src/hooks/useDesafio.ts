@@ -226,7 +226,11 @@ export function useDesafio() {
     },
     [userId, push],
   );
-  const addSleep = useCallback((s: Omit<Sleep, 'id'>) => saveSleep([...sleep, { ...s, id: Date.now().toString(36) }]), [sleep, saveSleep]);
+  // um registro de sono por dia (o dia em que acordou): registrar de novo substitui
+  const addSleep = useCallback(
+    (s: Omit<Sleep, 'id'>) => saveSleep([...sleep.filter((x) => x.date !== s.date || x.nap), { ...s, id: Date.now().toString(36) }]),
+    [sleep, saveSleep],
+  );
   const removeSleep = useCallback((id: string) => saveSleep(sleep.filter((s) => s.id !== id)), [sleep, saveSleep]);
 
   const choosePlayer = useCallback(

@@ -49,10 +49,13 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 };
 
+let lastSeen: { date: string; total: number } | null = null;
+
 const Water = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  const [todayTotal, setTodayTotal] = useState(0);
+  // abre com o último total visto hoje (não conta de 0 toda vez que entra na tela)
+  const [todayTotal, setTodayTotal] = useState(() => (lastSeen?.date === todayStr() ? lastSeen.total : 0));
   const [waterGoal, setWaterGoal] = useState(DEFAULT_WATER_GOAL_ML);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -69,8 +72,10 @@ const Water = () => {
   const [calcActivity, setCalcActivity] = useState(profile?.activity_level || 'moderate');
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const animatedTotal = useCountUp({ end: todayTotal, duration: 800 });
-  const animatedProgress = useCountUp({ end: Math.min(100, Math.round((todayTotal / waterGoal) * 100)), duration: 800 });
+  const startPct = (t: number) => Math.min(100, Math.round((t / waterGoal) * 100));
+  const [firstTotal] = useState(todayTotal);
+  const animatedTotal = useCountUp({ end: todayTotal, start: firstTotal, duration: 800 });
+  const animatedProgress = useCountUp({ end: startPct(todayTotal), start: startPct(firstTotal), duration: 800 });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -102,6 +107,7 @@ const Water = () => {
       setTodayRecords(data);
       const total = data.reduce((sum, item) => sum + item.amount_ml, 0);
       setTodayTotal(total);
+      lastSeen = { date: today, total };
     }
   };
 
@@ -287,7 +293,7 @@ const Water = () => {
                 <div className="flex flex-col items-center lg:items-start">
                   <motion.div 
                     className="relative w-48 h-48 sm:w-56 sm:h-56"
-                    initial={{ scale: 0.8, opacity: 0 }}
+                    initial={false}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
@@ -304,7 +310,7 @@ const Water = () => {
                         strokeWidth="6"
                         fill="none"
                         strokeLinecap="round"
-                        initial={{ strokeDasharray: '0 264' }}
+                        initial={false}
                         animate={{ strokeDasharray: `${progress * 2.64} 264` }}
                         transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 }}
                         style={{ filter: goalReached ? 'drop-shadow(0 0 12px hsl(var(--primary) / 0.5))' : 'drop-shadow(0 0 12px hsl(199 89% 48% / 0.4))' }}
@@ -312,7 +318,7 @@ const Water = () => {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <motion.div
-                        initial={{ scale: 0 }}
+                        initial={false}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
                       >
@@ -321,7 +327,7 @@ const Water = () => {
                       <motion.span 
                         className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight"
                         key={todayTotal}
-                        initial={{ scale: 1.15 }}
+                        initial={false}
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                       >
@@ -393,7 +399,7 @@ const Water = () => {
               {waterAmounts.map((amount, index) => (
                 <motion.button
                   key={amount.value}
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 + index * 0.05 }}
                   whileHover={{ scale: 1.02, y: -2 }}

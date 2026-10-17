@@ -29,7 +29,7 @@ const BottomNav = ({ active }: BottomNavProps) => {
     { icon: Swords, label: 'Desafios', path: '/challenges', color: 'text-amber-500', bg: 'bg-amber-500/15' },
     { icon: Droplets, label: 'Água', path: '/water', color: 'text-blue-500', bg: 'bg-blue-500/15' },
     { icon: Syringe, label: 'Injeção', path: '/injecao', color: 'text-indigo-500', bg: 'bg-indigo-500/15' },
-    { icon: Moon, label: 'Noite', path: '/noite', color: 'text-violet-500', bg: 'bg-violet-500/15' },
+    { icon: Moon, label: 'Sono', path: '/noite', color: 'text-violet-500', bg: 'bg-violet-500/15' },
     { icon: History, label: 'Histórico', path: '/historico', color: 'text-teal-500', bg: 'bg-teal-500/15' },
     { icon: User, label: 'Perfil', path: '/profile', color: 'text-slate-500', bg: 'bg-slate-500/15' },
   ];
@@ -55,7 +55,7 @@ const BottomNav = ({ active }: BottomNavProps) => {
         {isActive && (
           <motion.div
             layoutId="navIndicator"
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={false}
             animate={{ scale: 1, opacity: 1 }}
             className="absolute inset-0 rounded-xl"
             style={{
@@ -189,7 +189,7 @@ const BottomNav = ({ active }: BottomNavProps) => {
 
       {/* Bottom Nav */}
       <motion.nav
-        initial={{ y: 100, opacity: 0 }}
+        initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.3 }}
         className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 sm:pb-6"

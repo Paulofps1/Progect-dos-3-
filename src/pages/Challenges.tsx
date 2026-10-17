@@ -69,7 +69,7 @@ const Challenges = () => {
 
   return (
     <AppLayout activeNav="home">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
+      <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
         <SectionHeader title="Desafios" subtitle="Mini-desafios entre os 3" backTo="/dashboard" icon={<Swords className="w-5 h-5 text-primary" />} />
 
         <div className="px-4 sm:px-6 lg:px-8 space-y-5 mt-6 max-w-2xl mx-auto">
