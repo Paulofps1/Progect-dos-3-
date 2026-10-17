@@ -1,6 +1,6 @@
 # Desafio dos 3
 
-App do desafio de emagrecimento entre Paulo, Arthur e Rafaela (17/10 a 20/12/2026,
+App do desafio de emagrecimento entre Paulo, Arthur e Rafaela (19/10 a 20/12/2026,
 aposta de R$ 300), adaptado a partir do **Nutri AI** (Vite + React + shadcn + Supabase).
 
 ## Rodar no PC (Windows)

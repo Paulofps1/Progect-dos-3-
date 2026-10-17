@@ -8,6 +8,7 @@ import { Camera, User, Loader2, ImagePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/app/AppLayout';
+import { AvatarCropper, saveAvatar } from '@/components/desafio/AvatarCropper';
 import SectionHeader from '@/components/app/SectionHeader';
 
 const EditProfile = () => {
@@ -23,59 +24,36 @@ const EditProfile = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
+  // escolheu a foto: abre o ajuste (posição e zoom) antes de salvar
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !user) return;
-
     if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem');
+      toast.error('Escolha uma imagem');
       return;
     }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 5MB');
-      return;
-    }
-
-    setUploadingImage(true);
     setShowPhotoOptions(false);
+    setCropFile(file);
+  };
 
-    try {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: `${publicUrl}?t=${Date.now()}` })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
+  const handleCropped = async (dataUrl: string) => {
+    if (!user) return;
+    setCropFile(null);
+    setUploadingImage(true);
+    setAvatarPreview(dataUrl);
+    const error = await saveAvatar(user.id, dataUrl, profile?.full_name);
+    if (error) {
+      console.error('Foto de perfil:', error);
+      toast.error('Não salvou a foto, tente de novo');
+      setAvatarPreview(profile?.avatar_url || null);
+    } else {
       await refreshProfile();
       toast.success('Foto atualizada!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Erro ao fazer upload da foto');
-      setAvatarPreview(profile?.avatar_url || null);
-    } finally {
-      setUploadingImage(false);
     }
+    setUploadingImage(false);
   };
 
   const handleSave = async () => {
@@ -108,6 +86,7 @@ const EditProfile = () => {
 
   return (
     <AppLayout activeNav="profile" showNav={false}>
+      {cropFile && <AvatarCropper file={cropFile} onCancel={() => setCropFile(null)} onSaved={handleCropped} />}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -155,7 +134,7 @@ const EditProfile = () => {
             ref={cameraInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
+            capture="user"
             onChange={handleImageUpload}
             className="hidden"
           />

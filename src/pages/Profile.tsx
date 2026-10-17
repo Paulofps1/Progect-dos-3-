@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDesafio } from '@/hooks/useDesafio';
 import { num } from '@/lib/desafio/rules';
 import AppLayout from '@/components/app/AppLayout';
+import { AvatarCropper, saveAvatar } from '@/components/desafio/AvatarCropper';
 import SectionHeader from '@/components/app/SectionHeader';
 import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,52 +27,35 @@ const Profile = () => {
   };
 
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
+  // escolheu a foto: abre o ajuste (posição e zoom) antes de salvar
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !user) return;
-
     if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem');
+      toast.error('Escolha uma imagem');
       return;
     }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 5MB');
-      return;
-    }
-
-    setUploadingImage(true);
     setShowPhotoOptions(false);
+    setCropFile(file);
+  };
 
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+  const handleCropped = async (dataUrl: string) => {
+    if (!user) return;
+    setCropFile(null);
+    setUploadingImage(true);
+    const error = await saveAvatar(user.id, dataUrl, profile?.full_name);
+    if (error) {
+      console.error('Foto de perfil:', error);
+      toast.error('Não salvou a foto, tente de novo');
       
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: `${publicUrl}?t=${Date.now()}` })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
+    } else {
       await refreshProfile();
       toast.success('Foto atualizada!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Erro ao fazer upload da foto');
-    } finally {
-      setUploadingImage(false);
     }
+    setUploadingImage(false);
   };
 
   if (loading) {
@@ -93,6 +77,7 @@ const Profile = () => {
 
   return (
     <AppLayout activeNav="profile">
+      {cropFile && <AvatarCropper file={cropFile} onCancel={() => setCropFile(null)} onSaved={handleCropped} />}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -137,7 +122,7 @@ const Profile = () => {
                 <h2 className="font-bold text-xl text-foreground truncate">
                   {profile?.full_name || 'Usuário'}
                 </h2>
-                <p className="text-muted-foreground text-sm truncate">No desafio · 17/10 a 20/12</p>
+                <p className="text-muted-foreground text-sm truncate">No desafio · 19/10 a 20/12</p>
               </div>
             </div>
 
@@ -145,7 +130,7 @@ const Profile = () => {
               ref={cameraInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
+              capture="user"
               onChange={handleImageUpload}
               className="hidden"
             />
@@ -235,7 +220,7 @@ const Profile = () => {
             transition={{ delay: 0.4 }}
             className="text-center text-muted-foreground text-xs pt-2 pb-4"
           >
-            Desafio dos 3 · 17/10 a 20/12
+            Desafio dos 3 · 19/10 a 20/12
           </motion.p>
         </div>
 

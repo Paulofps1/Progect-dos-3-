@@ -16,6 +16,7 @@ import {
   type HabitKey,
   type Injection,
   type Player,
+  type Sleep,
   type Weight,
 } from '@/lib/desafio/rules';
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ export function useDesafio() {
   const [weights, setWeights] = useState<Weight[]>(() => (userId ? localDesafio.getWeights(userId) : []));
   const [injections, setInjections] = useState<Injection[]>(() => (userId ? localDesafio.getInjections(userId) : []));
   const [nextInjection, setNextInj] = useState<string | null>(() => (userId ? localDesafio.getNextInjection(userId) : null));
+  const [sleep, setSleep] = useState<Sleep[]>(() => (userId ? localDesafio.getSleep(userId) : []));
   const [chosen, setChosen] = useState<Player | null>(() => (userId ? localDesafio.getPlayer(userId) : null));
   const [loading, setLoading] = useState(() => !userId || !localDesafio.hasDbCache(userId));
 
@@ -57,6 +59,7 @@ export function useDesafio() {
     setInjections(localDesafio.getInjections(userId));
     setNextInj(localDesafio.getNextInjection(userId));
     setChosen(localDesafio.getPlayer(userId));
+    setSleep(localDesafio.getSleep(userId));
     const since = format(subDays(new Date(), 120), 'yyyy-MM-dd');
     const [w, s, mine] = await Promise.all([
       supabase.from('water_consumption').select('date, amount_ml').eq('user_id', userId).gte('date', since),
@@ -78,6 +81,7 @@ export function useDesafio() {
       sync('checks', localDesafio.getChecks(userId), (v) => !Object.keys(v).length, (v) => setChecks(v), (v) => localDesafio.setChecks(userId, v));
       sync('weights', localDesafio.getWeights(userId), (v) => !v.length, (v) => setWeights(v), (v) => localDesafio.setWeights(userId, v));
       sync('injections', localDesafio.getInjections(userId), (v) => !v.length, (v) => setInjections(v), (v) => localDesafio.setInjections(userId, v));
+      sync('sleep', localDesafio.getSleep(userId), (v) => !v.length, (v) => setSleep(v), (v) => localDesafio.setSleep(userId, v));
       sync('next_injection', localDesafio.getNextInjection(userId), (v) => !v, (v) => setNextInj(v), (v) => localDesafio.setNextInjection(userId, v));
     }
     const byDay: Record<string, number> = {};
@@ -212,6 +216,19 @@ export function useDesafio() {
     [userId, weights, push],
   );
 
+  const saveSleep = useCallback(
+    (list: Sleep[]) => {
+      if (!userId) return;
+      const sorted = [...list].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.id < b.id ? 1 : -1));
+      setSleep(sorted);
+      localDesafio.setSleep(userId, sorted);
+      push('sleep', sorted);
+    },
+    [userId, push],
+  );
+  const addSleep = useCallback((s: Omit<Sleep, 'id'>) => saveSleep([...sleep, { ...s, id: Date.now().toString(36) }]), [sleep, saveSleep]);
+  const removeSleep = useCallback((id: string) => saveSleep(sleep.filter((s) => s.id !== id)), [sleep, saveSleep]);
+
   const choosePlayer = useCallback(
     (p: Player) => {
       if (!userId) return;
@@ -240,5 +257,6 @@ export function useDesafio() {
   return {
     loading, today, player, choosePlayer, days, record, toggle, weights, saveWeight, removeWeight, myStats, reload: load,
     injections, addInjection, removeInjection, nextInjection, setNextInjection,
+    sleep, addSleep, removeSleep,
   };
 }

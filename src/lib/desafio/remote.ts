@@ -9,7 +9,7 @@ import type { DayRecord, Player } from './rules';
 
 export const IS_DEMO = import.meta.env.MODE === 'demo';
 
-export type Kind = 'checks' | 'weights' | 'injections' | 'next_injection' | 'days';
+export type Kind = 'checks' | 'weights' | 'injections' | 'next_injection' | 'days' | 'sleep';
 type Row = { user_id: string; tipo: Kind; jogador: Player | null; valor: unknown };
 
 // as tabelas novas ainda não estão nos tipos gerados do Supabase

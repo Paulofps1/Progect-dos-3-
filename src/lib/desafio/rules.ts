@@ -3,7 +3,7 @@
 export const PLAYERS = ['Paulo', 'Arthur', 'Rafaela'] as const;
 export type Player = (typeof PLAYERS)[number];
 
-export const START = '2026-10-17';
+export const START = '2026-10-19';
 export const END = '2026-12-20';
 export const PRIZE = 'R$ 300';
 export const JOKERS = 2;
@@ -42,6 +42,9 @@ export type Weight = { date: string; kg: number };
 
 /** Uma aplicação registrada. Só registro: o app não sugere dose nem intervalo. */
 export type Injection = { date: string; ml?: number; site?: string; note?: string };
+/** Sono registrado na página Noite. Opcional, não vale ponto (tem quem tenha insônia). */
+export type Sleep = { id: string; date: string; hours: number; nap?: boolean };
+
 export const INJECTION_SITES = ['Abdômen', 'Coxa esq.', 'Coxa dir.', 'Braço esq.', 'Braço dir.'];
 
 // ---------- datas ("YYYY-MM-DD" no fuso do aparelho) ----------

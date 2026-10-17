@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import { Home, Utensils, TrendingUp, Sparkles, Grid3X3, X, Trophy, Swords, Dumbbell, Syringe, User, History, Ruler, ScanLine, Users, Salad, Plus, Droplets, UtensilsCrossed, Camera } from 'lucide-react';
+import { Home, Utensils, TrendingUp, Sparkles, Grid3X3, X, Trophy, Swords, Dumbbell, Syringe, User, History, Ruler, ScanLine, Users, Salad, Plus, Droplets, UtensilsCrossed, Camera, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedIcon from '@/components/app/AnimatedIcon';
 
@@ -26,9 +26,10 @@ const BottomNav = ({ active }: BottomNavProps) => {
 
   const moreItems = [
     { icon: Dumbbell, label: 'Treinos', path: '/workouts', color: 'text-red-500', bg: 'bg-red-500/15' },
-    { icon: Swords, label: 'Desafios', path: '/challenges', color: 'text-violet-500', bg: 'bg-violet-500/15' },
+    { icon: Swords, label: 'Desafios', path: '/challenges', color: 'text-amber-500', bg: 'bg-amber-500/15' },
     { icon: Droplets, label: 'Água', path: '/water', color: 'text-blue-500', bg: 'bg-blue-500/15' },
     { icon: Syringe, label: 'Injeção', path: '/injecao', color: 'text-indigo-500', bg: 'bg-indigo-500/15' },
+    { icon: Moon, label: 'Noite', path: '/noite', color: 'text-violet-500', bg: 'bg-violet-500/15' },
     { icon: History, label: 'Histórico', path: '/historico', color: 'text-teal-500', bg: 'bg-teal-500/15' },
     { icon: User, label: 'Perfil', path: '/profile', color: 'text-slate-500', bg: 'bg-slate-500/15' },
   ];
@@ -157,7 +158,10 @@ const BottomNav = ({ active }: BottomNavProps) => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-2.5">
-                  {moreItems.map((item, i) => (
+                  {moreItems.map((item, i) => {
+                    // sobrou um sozinho na última linha: ocupa a linha toda, deitado
+                    const wide = moreItems.length % 3 === 1 && i === moreItems.length - 1;
+                    return (
                     <motion.button
                       key={item.path}
                       initial={{ opacity: 0, y: 10 }}
@@ -165,14 +169,17 @@ const BottomNav = ({ active }: BottomNavProps) => {
                       transition={{ delay: i * 0.03 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => { setShowMore(false); navigate(item.path); }}
-                      className="flex flex-col items-center justify-center gap-2.5 rounded-2xl bg-secondary/60 hover:bg-secondary px-2 py-4 transition-colors"
+                      className={`flex items-center justify-center rounded-2xl bg-secondary/60 hover:bg-secondary transition-colors ${
+                        wide ? 'col-span-3 flex-row gap-3 px-4 py-3' : 'flex-col gap-2.5 px-2 py-4'
+                      }`}
                     >
                       <span className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center`}>
                         <item.icon className={`w-6 h-6 ${item.color}`} />
                       </span>
                       <span className="text-sm font-medium text-foreground">{item.label}</span>
                     </motion.button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>

@@ -1,7 +1,7 @@
 // Cópia NESTE aparelho (por usuário) do checklist, pesagens, injeções e desafios,
 // que também vão para o banco (remote.ts). Fotos das refeições ficam só aqui.
 
-import type { CheckKey, Injection, Player, Weight } from './rules';
+import type { CheckKey, Injection, Player, Sleep, Weight } from './rules';
 import type { Challenge } from './challenges';
 
 type Checks = Record<string, Partial<Record<CheckKey, boolean>>>; // por data
@@ -37,6 +37,8 @@ export const localDesafio = {
   /** Desafios entre os 3 (cópia local; os de verdade estão no banco). */
   getChallenges: () => read<Challenge[]>('desafio:challenges', []),
   setChallenges: (v: Challenge[]) => write('desafio:challenges', v),
+  getSleep: (userId: string) => read<Sleep[]>(k(userId, 'sono'), []),
+  setSleep: (userId: string, v: Sleep[]) => write(k(userId, 'sono'), v),
   getPlayer: (userId: string) => read<Player | null>(k(userId, 'player'), null),
   setPlayer: (userId: string, p: Player) => write(k(userId, 'player'), p),
   /** Última água/treino lidos do banco, só para a tela abrir já preenchida. */

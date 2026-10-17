@@ -72,7 +72,7 @@ const Auth = () => {
           <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
             <span className="text-3xl font-extrabold text-primary-foreground">3</span>
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-4">17/10 a 20/12 · 9 semanas</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-4">19/10 a 20/12 · 9 semanas</p>
           <h1 className="text-3xl font-bold text-foreground mt-1">Desafio dos 3</h1>
           <p className="text-foreground/80 mt-2 text-sm leading-relaxed max-w-[18rem]">
             Paulo, Arthur e Rafaela. Quem somar mais pontos até 20/12 leva os <b className="text-foreground">{PRIZE}</b>.

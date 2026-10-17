@@ -75,7 +75,7 @@ const Achievements = () => {
                   Faltam <b>{left}</b> dias · termina em 20/12
                 </>
               ) : (
-                'Começa em 17/10'
+                'Começa em 19/10'
               )}
             </p>
             <div className="h-1.5 rounded-full bg-background/60 overflow-hidden mt-2">

@@ -115,7 +115,7 @@ const Progress = () => {
             </div>
             <div className="relative mt-5">
               <div className="flex justify-between text-[11px] text-muted-foreground">
-                <span>{elapsed > 0 ? `Dia ${Math.min(elapsed, total)} de ${total}` : 'Começa em 17/10'}</span>
+                <span>{elapsed > 0 ? `Dia ${Math.min(elapsed, total)} de ${total}` : 'Começa em 19/10'}</span>
                 <span>termina em 20/12</span>
               </div>
               <div className="h-2 rounded-full bg-secondary overflow-hidden mt-1.5">

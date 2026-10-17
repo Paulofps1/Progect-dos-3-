@@ -23,6 +23,7 @@ import Challenges from "./pages/Challenges";
 
 import Workouts from "./pages/Workouts";
 import Injection from "./pages/Injection";
+import Night from "./pages/Night";
 import History from "./pages/History";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ const AnimatedRoutes = () => {
           
           <Route path="/workouts" element={<Workouts />} />
           <Route path="/injecao" element={<Injection />} />
+          <Route path="/noite" element={<Night />} />
           <Route path="/historico" element={<History />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

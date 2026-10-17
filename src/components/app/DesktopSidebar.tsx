@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Utensils, TrendingUp, Sparkles, Plus, Minus, Droplets, Salad, UtensilsCrossed, BookOpen, Ruler, Bot, BarChart3, Dumbbell, Trophy, Swords, CookingPot, Syringe, History,
+  Moon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebarContext } from '@/contexts/SidebarContext';
@@ -33,6 +34,7 @@ const DesktopSidebar = () => {
       label: 'Treino',
       items: [
         { id: 'workouts', icon: Dumbbell, label: 'Treinos', path: '/workouts' },
+        { id: 'noite', icon: Moon, label: 'Noite', path: '/noite' },
       ],
     },
     {

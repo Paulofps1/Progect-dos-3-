@@ -41,7 +41,7 @@ export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Prop
   const status = isSunday(record.date)
     ? 'Domingo é livre: não conta nem quebra a sequência'
     : record.date < START
-      ? 'Antes de 17/10 não conta ponto'
+      ? 'Antes de 19/10 não conta ponto'
       : perfect
         ? record.coringa
           ? 'Dia salvo pelo coringa'
