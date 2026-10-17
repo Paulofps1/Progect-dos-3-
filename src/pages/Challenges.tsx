@@ -11,6 +11,7 @@ import { PlayerPicker } from '@/components/desafio/DesafioParts';
 import { TONES, type Tone } from '@/components/desafio/tones';
 import { useAuth } from '@/hooks/useAuth';
 import { useDesafio } from '@/hooks/useDesafio';
+import { useEveryone } from '@/hooks/useEveryone';
 import { useChallenges } from '@/hooks/useChallenges';
 import {
   DURATIONS,
@@ -42,6 +43,7 @@ const Challenges = () => {
   const navigate = useNavigate();
   const d = useDesafio();
   const ch = useChallenges(d.player);
+  const everyone = useEveryone();
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -52,7 +54,9 @@ const Challenges = () => {
   const recordOf = (p: Player, date: string) => {
     if (date > d.today) return undefined;
     if (p === me) return d.record(date);
-    return IS_DEMO ? fakeRecord(p, date) : null; // sem banco não dá pra ver o dia dos outros
+    if (IS_DEMO) return fakeRecord(p, date);
+    const o = everyone.data[p];
+    return o ? o.days[date] : null; // null = ainda não entrou no app
   };
 
   const withStatus = ch.list.map((c) => ({ c, s: statusOf(c, me, d.today) }));
@@ -84,9 +88,9 @@ const Challenges = () => {
             <Button onClick={() => setCreating(true)} disabled={!me} className="relative w-full h-12 rounded-2xl font-semibold mt-4">
               <Plus className="w-5 h-5 mr-1" /> Novo desafio
             </Button>
-            {!IS_DEMO && (
+            {!IS_DEMO && !ch.online && (
               <p className="relative text-[11px] text-muted-foreground mt-3">
-                Por enquanto os desafios ficam neste celular: Arthur e Rafaela só recebem o convite quando o banco for ligado.
+                Sem conexão com o banco agora: os desafios aparecem para os outros quando voltar.
               </p>
             )}
           </div>
@@ -297,7 +301,7 @@ function Ranking({
                   {s.player}
                   {s.player === me && <span className="text-muted-foreground font-normal"> · você</span>}
                 </span>
-                <span className="text-muted-foreground tabular-nums">{s.value == null ? 'aparece com o banco' : `${s.value}/${c.days}`}</span>
+                <span className="text-muted-foreground tabular-nums">{s.value == null ? 'ainda não entrou' : `${s.value}/${c.days}`}</span>
               </div>
               <div className="h-1.5 rounded-full bg-secondary overflow-hidden mt-1">
                 <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${s.value == null ? 0 : (s.value / c.days) * 100}%` }} />

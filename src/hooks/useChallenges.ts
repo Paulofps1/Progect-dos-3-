@@ -1,36 +1,64 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { localDesafio } from '@/lib/desafio/localStore';
+import { createChallenge, deleteChallenge, getChallenge, IS_DEMO, loadChallenges, updateChallenge } from '@/lib/desafio/remote';
 import { allIn, type Challenge, type Metric } from '@/lib/desafio/challenges';
 import { PLAYERS, type Player } from '@/lib/desafio/rules';
 
-const IS_DEMO = import.meta.env.MODE === 'demo';
-
-// Desafios entre os 3. Hoje ficam no aparelho; com o banco, cada um aceita do
-// próprio celular. Na demonstração, Arthur e Rafaela aceitam sozinhos.
+// Desafios entre os 3, no banco: cada um aceita ou recusa do próprio celular.
+// Sem banco (ou na demonstração) ficam no aparelho; na demonstração, Arthur e
+// Rafaela aceitam sozinhos.
 export function useChallenges(me: Player | null) {
   const [list, setList] = useState<Challenge[]>([]);
+  const [online, setOnline] = useState(true);
+
+  const load = useCallback(async () => {
+    const remote = await loadChallenges();
+    if (remote) {
+      setList(remote);
+      localDesafio.setChallenges(remote);
+      setOnline(true);
+    } else {
+      setList(localDesafio.getChallenges());
+      setOnline(IS_DEMO);
+    }
+  }, []);
 
   useEffect(() => {
     setList(localDesafio.getChallenges());
-  }, []);
+    load();
+    const onFocus = () => document.visibilityState === 'visible' && load();
+    document.addEventListener('visibilitychange', onFocus);
+    const t = setInterval(load, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', onFocus);
+      clearInterval(t);
+    };
+  }, [load]);
 
-  const save = useCallback((next: Challenge[]) => {
+  const saveLocal = useCallback((next: Challenge[]) => {
     setList(next);
     localDesafio.setChallenges(next);
   }, []);
 
+  // aplica a mudança sobre a versão mais nova do banco (os outros podem ter respondido)
   const update = useCallback(
-    (id: string, fn: (c: Challenge) => Challenge) => {
-      const next = localDesafio.getChallenges().map((c) => (c.id === id ? fn(c) : c));
-      save(next);
-      return next.find((c) => c.id === id);
+    async (id: string, fn: (c: Challenge) => Challenge) => {
+      const base = (online && !IS_DEMO && (await getChallenge(id))) || localDesafio.getChallenges().find((c) => c.id === id);
+      if (!base) return undefined;
+      const after = fn(base);
+      if (!IS_DEMO && !(await updateChallenge(after))) {
+        toast.error('Não salvou, confira a internet');
+        return undefined;
+      }
+      saveLocal(localDesafio.getChallenges().map((c) => (c.id === id ? after : c)));
+      return after;
     },
-    [save],
+    [online, saveLocal],
   );
 
   const create = useCallback(
-    (metric: Metric, days: number, start: string) => {
+    async (metric: Metric, days: number, start: string) => {
       if (!me) return;
       const c: Challenge = {
         id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -41,41 +69,52 @@ export function useChallenges(me: Player | null) {
         accepted: [me],
         createdAt: new Date().toISOString(),
       };
-      save([c, ...localDesafio.getChallenges()]);
+      if (!IS_DEMO && !(await createChallenge(c))) {
+        toast.error('Não criou o desafio, confira a internet');
+        return;
+      }
+      saveLocal([c, ...localDesafio.getChallenges()]);
       if (IS_DEMO) {
         // simulação: os outros dois aceitam em seguida
         PLAYERS.filter((p) => p !== me).forEach((p, i) =>
-          setTimeout(() => {
-            const after = update(c.id, (x) => (x.declinedBy || x.accepted.includes(p) ? x : { ...x, accepted: [...x.accepted, p] }));
+          setTimeout(async () => {
+            const after = await update(c.id, (x) => (x.declinedBy || x.accepted.includes(p) ? x : { ...x, accepted: [...x.accepted, p] }));
             toast.success(`${p} aceitou o desafio`);
             if (after && allIn(after)) toast.success('Os 3 aceitaram: desafio valendo!');
           }, 1500 + i * 1500),
         );
       }
     },
-    [me, save, update],
+    [me, saveLocal, update],
   );
 
   const accept = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!me) return;
-      const after = update(id, (c) => (c.accepted.includes(me) ? c : { ...c, accepted: [...c.accepted, me] }));
-      if (after && allIn(after)) toast.success('Os 3 aceitaram: desafio valendo!');
+      const after = await update(id, (c) => (c.accepted.includes(me) ? c : { ...c, accepted: [...c.accepted, me] }));
+      if (!after) return;
+      if (after.declinedBy) toast(`${after.declinedBy} já tinha recusado`);
+      else if (allIn(after)) toast.success('Os 3 aceitaram: desafio valendo!');
       else toast.success('Você aceitou. Falta o outro aceitar.');
     },
     [me, update],
   );
 
   const decline = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!me) return;
-      update(id, (c) => ({ ...c, declinedBy: me }));
-      toast('Desafio recusado e cancelado para os 3');
+      if (await update(id, (c) => ({ ...c, declinedBy: c.declinedBy ?? me }))) toast('Desafio recusado e cancelado para os 3');
     },
     [me, update],
   );
 
-  const remove = useCallback((id: string) => save(localDesafio.getChallenges().filter((c) => c.id !== id)), [save]);
+  const remove = useCallback(
+    async (id: string) => {
+      if (!IS_DEMO && !(await deleteChallenge(id))) return toast.error('Não apagou, confira a internet');
+      saveLocal(localDesafio.getChallenges().filter((c) => c.id !== id));
+    },
+    [saveLocal],
+  );
 
-  return { list, create, accept, decline, remove };
+  return { list, online, create, accept, decline, remove };
 }

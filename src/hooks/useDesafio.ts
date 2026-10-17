@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { localDesafio } from '@/lib/desafio/localStore';
+import { loadMine, saveMine, type Kind } from '@/lib/desafio/remote';
 import {
   DEFAULT_WATER_GOAL_ML,
   JOKERS,
@@ -29,8 +30,9 @@ function lastLoginPlayer(): Player | null {
   }
 }
 
-// Junta, por dia, o que vem do banco (água e treino) com o checklist guardado no
-// aparelho. Água e treino continuam sendo registrados nas próprias telas.
+// Junta, por dia, água e treino (tabelas do app) com o checklist do desafio.
+// Checklist, pesagens e injeções ficam no banco (desafio_dados) com cópia no
+// aparelho; o resumo dos dias também vai para o banco, para o Placar dos 3.
 export function useDesafio() {
   const { user, profile } = useAuth();
   const userId = user?.id;
@@ -54,10 +56,28 @@ export function useDesafio() {
     setNextInj(localDesafio.getNextInjection(userId));
     setChosen(localDesafio.getPlayer(userId));
     const since = format(subDays(new Date(), 120), 'yyyy-MM-dd');
-    const [w, s] = await Promise.all([
+    const [w, s, mine] = await Promise.all([
       supabase.from('water_consumption').select('date, amount_ml').eq('user_id', userId).gte('date', since),
       supabase.from('workout_sessions').select('date').eq('user_id', userId).gte('date', since),
+      loadMine(userId),
     ]);
+    if (mine) {
+      // o banco manda, exceto no que mudou aqui e ainda não subiu (ou nunca subiu)
+      const pending = localDesafio.getPending(userId);
+      const sync = <T,>(kind: Kind, local: T, empty: (v: T) => boolean, apply: (v: T) => void, store: (v: T) => void) => {
+        if (kind in mine && !pending.includes(kind)) {
+          const v = mine[kind] as T;
+          apply(v);
+          store(v);
+        } else if (!empty(local) || pending.includes(kind)) {
+          saveMine(userId, localDesafio.getPlayer(userId), kind, local).then((ok) => ok && localDesafio.setPending(userId, kind, false));
+        }
+      };
+      sync('checks', localDesafio.getChecks(userId), (v) => !Object.keys(v).length, (v) => setChecks(v), (v) => localDesafio.setChecks(userId, v));
+      sync('weights', localDesafio.getWeights(userId), (v) => !v.length, (v) => setWeights(v), (v) => localDesafio.setWeights(userId, v));
+      sync('injections', localDesafio.getInjections(userId), (v) => !v.length, (v) => setInjections(v), (v) => localDesafio.setInjections(userId, v));
+      sync('next_injection', localDesafio.getNextInjection(userId), (v) => !v, (v) => setNextInj(v), (v) => localDesafio.setNextInjection(userId, v));
+    }
     const byDay: Record<string, number> = {};
     for (const r of w.data || []) byDay[r.date] = (byDay[r.date] || 0) + (r.amount_ml || 0);
     setWater(byDay);
@@ -70,6 +90,16 @@ export function useDesafio() {
   }, [load]);
 
   const player = chosen ?? playerFromName(profile?.full_name) ?? lastLoginPlayer();
+
+  // guarda no aparelho na hora e manda para o banco; se falhar, sobe na próxima abertura
+  const push = useCallback(
+    (kind: Kind, value: unknown) => {
+      if (!userId) return;
+      localDesafio.setPending(userId, kind, true);
+      saveMine(userId, player, kind, value).then((ok) => ok && localDesafio.setPending(userId, kind, false));
+    },
+    [userId, player],
+  );
 
   const days = useMemo(() => {
     const out: Record<string, DayRecord> = {};
@@ -93,8 +123,9 @@ export function useDesafio() {
       const sorted = [...list].sort((a, b) => (a.date < b.date ? 1 : -1));
       setInjections(sorted);
       localDesafio.setInjections(userId, sorted);
+      push('injections', sorted);
     },
-    [userId],
+    [userId, push],
   );
 
   const addInjection = useCallback(
@@ -110,8 +141,9 @@ export function useDesafio() {
       if (!userId) return;
       setNextInj(d);
       localDesafio.setNextInjection(userId, d);
+      push('next_injection', d);
     },
-    [userId],
+    [userId, push],
   );
 
   const toggle = useCallback(
@@ -149,8 +181,9 @@ export function useDesafio() {
       const next = { ...checks, [date]: { ...checks[date], [k]: !cur } };
       setChecks(next);
       localDesafio.setChecks(userId, next);
+      push('checks', next);
     },
-    [userId, today, trained, checks, injections, saveInjections],
+    [userId, today, trained, checks, injections, saveInjections, push],
   );
 
   const saveWeight = useCallback(
@@ -159,8 +192,9 @@ export function useDesafio() {
       const next = [...weights.filter((w) => w.date !== today), { date: today, kg }];
       setWeights(next);
       localDesafio.setWeights(userId, next);
+      push('weights', next);
     },
-    [userId, weights, today],
+    [userId, weights, today, push],
   );
 
   const removeWeight = useCallback(
@@ -169,8 +203,9 @@ export function useDesafio() {
       const next = weights.filter((w) => w.date !== date);
       setWeights(next);
       localDesafio.setWeights(userId, next);
+      push('weights', next);
     },
-    [userId, weights],
+    [userId, weights, push],
   );
 
   const choosePlayer = useCallback(
@@ -181,6 +216,20 @@ export function useDesafio() {
     },
     [userId],
   );
+
+  // resumo dos dias no banco: é o que os outros dois enxergam no Placar e nos Desafios
+  const sentDays = useRef('');
+  useEffect(() => {
+    if (!userId || !player || loading) return;
+    const t = setTimeout(() => {
+      const json = JSON.stringify([player, days, weights]);
+      if (json === sentDays.current) return;
+      sentDays.current = json;
+      saveMine(userId, player, 'days', days);
+      saveMine(userId, player, 'weights', weights);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [userId, player, loading, days, weights]);
 
   const myStats = player ? stats(days, today, player, weights) : null;
 

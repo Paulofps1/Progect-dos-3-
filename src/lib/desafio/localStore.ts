@@ -1,6 +1,5 @@
-// O que o banco ainda não tem fica guardado NESTE aparelho (por usuário):
-// checklist do dia, pesagens, quem você é no desafio e fotos das refeições.
-// Quando o back-end entrar, troca-se só este arquivo.
+// Cópia NESTE aparelho (por usuário) do checklist, pesagens, injeções e desafios,
+// que também vão para o banco (remote.ts). Fotos das refeições ficam só aqui.
 
 import type { CheckKey, Injection, Player, Weight } from './rules';
 import type { Challenge } from './challenges';
@@ -35,11 +34,17 @@ export const localDesafio = {
   /** Próxima aplicação que a própria pessoa marcou (o app não calcula). */
   getNextInjection: (userId: string) => read<string | null>(k(userId, 'next-injection'), null),
   setNextInjection: (userId: string, d: string | null) => write(k(userId, 'next-injection'), d),
-  /** Desafios entre os 3. Sem banco, ficam só neste aparelho (os outros não veem). */
+  /** Desafios entre os 3 (cópia local; os de verdade estão no banco). */
   getChallenges: () => read<Challenge[]>('desafio:challenges', []),
   setChallenges: (v: Challenge[]) => write('desafio:challenges', v),
   getPlayer: (userId: string) => read<Player | null>(k(userId, 'player'), null),
   setPlayer: (userId: string, p: Player) => write(k(userId, 'player'), p),
+  /** Tipos alterados aqui que ainda não chegaram ao banco (sem internet, por ex.). */
+  getPending: (userId: string) => read<string[]>(k(userId, 'pendente'), []),
+  setPending: (userId: string, kind: string, pending: boolean) => {
+    const cur = read<string[]>(k(userId, 'pendente'), []).filter((x) => x !== kind);
+    write(k(userId, 'pendente'), pending ? [...cur, kind] : cur);
+  },
 };
 
 // ---------- fotos das refeições (IndexedDB, por id da refeição) ----------

@@ -8,6 +8,7 @@ import { ptBR } from 'date-fns/locale';
 import AppLayout from '@/components/app/AppLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDesafio } from '@/hooks/useDesafio';
+import { useEveryone } from '@/hooks/useEveryone';
 import { PlayerPicker } from '@/components/desafio/DesafioParts';
 import {
   BONUS_ENABLED,
@@ -19,14 +20,15 @@ import {
   PRIZE,
   START,
   daysBetween,
+  stats,
   isPerfect,
   isSunday,
   num,
   ymd,
 } from '@/lib/desafio/rules';
 
-// Placar do campeonato entre os 3. Por enquanto só os seus números são reais
-// (vêm deste aparelho); os dos outros aparecem quando o banco for ligado.
+// Placar do campeonato entre os 3. Os seus números saem deste aparelho na hora;
+// os dos outros dois, do resumo que cada um manda para o banco.
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -34,6 +36,7 @@ const Achievements = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const d = useDesafio();
+  const everyone = useEveryone();
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
@@ -41,7 +44,12 @@ const Achievements = () => {
 
   const started = d.today >= START;
   const left = Math.max(0, daysBetween(d.today, END));
-  const rows = PLAYERS.map((p) => ({ p, s: p === d.player ? d.myStats : null })).sort(
+  const statsOf = (p: (typeof PLAYERS)[number]) => {
+    if (p === d.player) return d.myStats;
+    const o = everyone.data[p];
+    return o ? stats(o.days, d.today, p, o.weights) : null;
+  };
+  const rows = PLAYERS.map((p) => ({ p, s: statsOf(p) })).sort(
     (a, b) => (b.s?.pts ?? -1) - (a.s?.pts ?? -1) || (b.s?.pct ?? 0) - (a.s?.pct ?? 0),
   );
 
@@ -97,7 +105,7 @@ const Achievements = () => {
                   <p className="text-xs text-muted-foreground">
                     {s
                       ? `${num(s.first)} → ${num(s.last)} kg · 🔥 ${s.run} seguidos`
-                      : `${num(INITIAL_WEIGHTS[p])} kg no início · aparece quando o banco for ligado`}
+                      : `${num(INITIAL_WEIGHTS[p])} kg no início · ${everyone.ready ? 'ainda não entrou no app' : 'carregando…'}`}
                   </p>
                 </div>
                 <div className="text-right">
