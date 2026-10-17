@@ -70,11 +70,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // O Supabase avisa de novo a cada troca de token e ao voltar para o app. Se for a
+    // mesma pessoa, mantém o mesmo objeto de usuário: senão as telas recarregam e piscam.
+    let currentId: string | null = null;
     const apply = (s: Session | null) => {
       setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) setTimeout(() => fetchProfile(s.user.id), 0);
-      else setProfile(null);
+      const id = s?.user?.id ?? null;
+      if (id !== currentId) {
+        currentId = id;
+        setUser(s?.user ?? null);
+        if (s?.user) setTimeout(() => fetchProfile(s.user.id), 0);
+        else setProfile(null);
+      }
       setLoading(false);
     };
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => apply(s));

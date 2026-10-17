@@ -4,7 +4,7 @@ const MOBILE_BREAKPOINT = 768;
 const TABLET_BREAKPOINT = 1024;
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < MOBILE_BREAKPOINT);
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
@@ -21,7 +21,8 @@ export function useIsMobile() {
 
 // Hook para detectar mobile + tablet (usa bottom nav ao invés de sidebar)
 export function useIsMobileOrTablet() {
-  const [isMobileOrTablet, setIsMobileOrTablet] = React.useState<boolean | undefined>(undefined);
+  // já começa certo: se começasse indefinido, a 1ª tela saía no layout de computador e trocava
+  const [isMobileOrTablet, setIsMobileOrTablet] = React.useState(() => window.innerWidth < TABLET_BREAKPOINT);
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${TABLET_BREAKPOINT - 1}px)`);

@@ -9,13 +9,13 @@ import { PLAYERS, type Player } from '@/lib/desafio/rules';
 // Sem banco (ou na demonstração) ficam no aparelho; na demonstração, Arthur e
 // Rafaela aceitam sozinhos.
 export function useChallenges(me: Player | null) {
-  const [list, setList] = useState<Challenge[]>([]);
+  const [list, setList] = useState<Challenge[]>(() => localDesafio.getChallenges());
   const [online, setOnline] = useState(true);
 
   const load = useCallback(async () => {
     const remote = await loadChallenges();
     if (remote) {
-      setList(remote);
+      if (JSON.stringify(remote) !== JSON.stringify(localDesafio.getChallenges())) setList(remote);
       localDesafio.setChallenges(remote);
       setOnline(true);
     } else {
@@ -25,7 +25,6 @@ export function useChallenges(me: Player | null) {
   }, []);
 
   useEffect(() => {
-    setList(localDesafio.getChallenges());
     load();
     const onFocus = () => document.visibilityState === 'visible' && load();
     document.addEventListener('visibilitychange', onFocus);

@@ -39,14 +39,16 @@ export function useDesafio() {
   const today = todayStr();
   const waterGoalMl = profile?.water_goal_ml || DEFAULT_WATER_GOAL_ML;
 
-  const [water, setWater] = useState<Record<string, number>>({});
-  const [trained, setTrained] = useState<Set<string>>(new Set());
-  const [checks, setChecks] = useState<ReturnType<typeof localDesafio.getChecks>>({});
-  const [weights, setWeights] = useState<Weight[]>([]);
-  const [injections, setInjections] = useState<Injection[]>([]);
-  const [nextInjection, setNextInj] = useState<string | null>(null);
-  const [chosen, setChosen] = useState<Player | null>(null);
-  const [loading, setLoading] = useState(true);
+  // começa com o que já está no aparelho (inclusive água/treino da última vez):
+  // assim a tela não aparece vazia e depois enche (piscava ao trocar de página)
+  const [water, setWater] = useState<Record<string, number>>(() => (userId ? localDesafio.getDbCache(userId).water : {}));
+  const [trained, setTrained] = useState<Set<string>>(() => new Set(userId ? localDesafio.getDbCache(userId).trained : []));
+  const [checks, setChecks] = useState(() => (userId ? localDesafio.getChecks(userId) : {}));
+  const [weights, setWeights] = useState<Weight[]>(() => (userId ? localDesafio.getWeights(userId) : []));
+  const [injections, setInjections] = useState<Injection[]>(() => (userId ? localDesafio.getInjections(userId) : []));
+  const [nextInjection, setNextInj] = useState<string | null>(() => (userId ? localDesafio.getNextInjection(userId) : null));
+  const [chosen, setChosen] = useState<Player | null>(() => (userId ? localDesafio.getPlayer(userId) : null));
+  const [loading, setLoading] = useState(() => !userId || !localDesafio.hasDbCache(userId));
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -80,8 +82,10 @@ export function useDesafio() {
     }
     const byDay: Record<string, number> = {};
     for (const r of w.data || []) byDay[r.date] = (byDay[r.date] || 0) + (r.amount_ml || 0);
+    const trainedDays = (s.data || []).map((r) => r.date);
     setWater(byDay);
-    setTrained(new Set((s.data || []).map((r) => r.date)));
+    setTrained(new Set(trainedDays));
+    if (!w.error && !s.error) localDesafio.setDbCache(userId, { water: byDay, trained: trainedDays });
     setLoading(false);
   }, [userId]);
 

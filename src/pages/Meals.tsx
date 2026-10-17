@@ -87,9 +87,12 @@ const Meals = () => {
     });
   }, []);
 
+  const loadedDate = useRef<string | null>(null);
   const loadData = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
+    // carregando só ao trocar de dia; recarregar o mesmo dia não apaga a lista (piscava)
+    if (loadedDate.current !== date) setLoading(true);
+    loadedDate.current = date;
     const [dayMeals, week] = await Promise.all([
       supabase.from('meals').select('*').eq('user_id', user.id).eq('date', date).order('created_at', { ascending: true }),
       supabase.from('meals').select('date, total_calories').eq('user_id', user.id).gte('date', days[days.length - 1]),

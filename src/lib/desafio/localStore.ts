@@ -39,6 +39,10 @@ export const localDesafio = {
   setChallenges: (v: Challenge[]) => write('desafio:challenges', v),
   getPlayer: (userId: string) => read<Player | null>(k(userId, 'player'), null),
   setPlayer: (userId: string, p: Player) => write(k(userId, 'player'), p),
+  /** Última água/treino lidos do banco, só para a tela abrir já preenchida. */
+  getDbCache: (userId: string) => read<{ water: Record<string, number>; trained: string[] }>(k(userId, 'cache-banco'), { water: {}, trained: [] }),
+  hasDbCache: (userId: string) => localStorage.getItem(k(userId, 'cache-banco')) !== null,
+  setDbCache: (userId: string, v: { water: Record<string, number>; trained: string[] }) => write(k(userId, 'cache-banco'), v),
   /** Tipos alterados aqui que ainda não chegaram ao banco (sem internet, por ex.). */
   getPending: (userId: string) => read<string[]>(k(userId, 'pendente'), []),
   setPending: (userId: string, kind: string, pending: boolean) => {
