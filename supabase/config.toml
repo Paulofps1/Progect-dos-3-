@@ -1,0 +1,4 @@
+project_id = "vjgzpipbraqvktwyemki"
+
+[functions.analyze-food-photo]
+verify_jwt = false

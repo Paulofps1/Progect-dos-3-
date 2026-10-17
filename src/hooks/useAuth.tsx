@@ -1,0 +1,135 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Profile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  is_premium: boolean;
+  scans_remaining: number;
+  goal: string | null;
+  phone_number: string | null;
+  notification_meals: boolean;
+  notification_water: boolean;
+  notification_daily: boolean;
+  notification_tips: boolean;
+  has_seen_onboarding: boolean;
+  water_goal_ml: number | null;
+  age: number | null;
+  weight: number | null;
+  height: number | null;
+  activity_level: string | null;
+  plan: string | null;
+  first_login: boolean;
+  password_created: boolean;
+  // Onboarding fields
+  gender: string | null;
+  birth_date: string | null;
+  sleep_quality: number | null;
+  dietary_restrictions: string[] | null;
+  meal_routine: string | null;
+  exercise_frequency: number | null;
+  uses_supplements: boolean | null;
+  target_weight: number | null;
+  observations: string | null;
+  onboarding_step: number | null;
+  // Streak fields
+  current_streak: number | null;
+  longest_streak: number | null;
+  last_active_date: string | null;
+  flex_days: number[] | null;
+  flex_calories_bonus: number | null;
+}
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  profile: Profile | null;
+  loading: boolean;
+  enterAs: (player: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+}
+
+// contas fixas dos jogadores (dá para trocar por variáveis de ambiente)
+const PLAYER_EMAIL_DOMAIN = import.meta.env.VITE_DESAFIO_EMAIL_DOMAIN || 'desafiodos3.app';
+const PLAYER_PASSWORD = import.meta.env.VITE_DESAFIO_SENHA || 'desafio-dos-3-2026';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    if (data) setProfile(data as Profile);
+  };
+
+  useEffect(() => {
+    const apply = (s: Session | null) => {
+      setSession(s);
+      setUser(s?.user ?? null);
+      if (s?.user) setTimeout(() => fetchProfile(s.user.id), 0);
+      else setProfile(null);
+      setLoading(false);
+    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => apply(s));
+    supabase.auth.getSession().then(({ data: { session: s } }) => apply(s));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Entrada só com o nome: cada jogador tem uma conta fixa por trás (e-mail e senha
+  // do app, não da pessoa). Na 1ª vez a conta é criada. Escolha do grupo: qualquer um
+  // pode entrar como qualquer um.
+  const enterAs = async (player: string) => {
+    const email = `${player.toLowerCase()}@${PLAYER_EMAIL_DOMAIN}`;
+    const first = await supabase.auth.signInWithPassword({ email, password: PLAYER_PASSWORD });
+    if (!first.error) return { error: null };
+    if (!/invalid login/i.test(first.error.message)) return { error: first.error };
+    const created = await supabase.auth.signUp({ email, password: PLAYER_PASSWORD, options: { data: { full_name: player } } });
+    if (created.error) return { error: created.error };
+    if (!created.data.session) {
+      return { error: new Error('A conta foi criada, mas o Supabase pede confirmação de e-mail. Desligue "Confirm email" em Auth → Providers → Email.') };
+    }
+    return { error: null };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
+      loading,
+      enterAs,
+      signOut,
+      refreshProfile,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
