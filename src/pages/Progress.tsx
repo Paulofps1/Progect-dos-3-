@@ -29,6 +29,7 @@ import {
   jokersLeftOf,
   monthDays,
   needsProof,
+  bonusOf,
   RULES_V2,
   num,
   type DayRecord,
@@ -193,13 +194,13 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
     const on = habitDone(k, record);
     if (k === 'agua') return on ? toast('Água de um dia que passou só dá para completar, não tirar') : d.fillWater(record.date);
     if (k === 'comida' && record.date >= RULES_V2) return navigate(`/meals?dia=${record.date}`); // automático: fotos dos pratos
-    if (needsProof(k, record.date) && !record.cardio) return setProof(k as ProofKind);
+    if (needsProof(k, record.date) && !(record.passos && record.provaPassos)) return setProof(k as ProofKind);
     d.toggle(record.date, k);
   };
   const perfect = isPerfect(record);
   const pts = dayPoints(record);
   const label = record.date === today ? 'Hoje' : format(parseISO(record.date), "EEEE, dd/MM", { locale: ptBR });
-  const keys: HabitKey[] = ['agua', 'treino', 'comida', 'doce', 'cardio', 'passos'];
+  const keys: HabitKey[] = ['agua', 'treino', 'comida', 'doce', ...bonusOf(record.date)];
   return (
     <div className="mt-4 rounded-2xl bg-secondary/60 p-3">
       <div className="flex items-center justify-between gap-2">
@@ -237,7 +238,7 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
           )}
         </div>
       )}
-      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photo) => d.markWithProof(record.date, kind, photo)} />
+      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photos) => d.markWithProof(record.date, kind, photos)} />
     </div>
   );
 }

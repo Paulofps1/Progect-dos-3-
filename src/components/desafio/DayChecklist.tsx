@@ -6,7 +6,7 @@ import { TONES } from './tones';
 import { ProofSheet } from './ProofSheet';
 import type { ProofKind } from '@/lib/desafio/proofs';
 import {
-  BONUS,
+  bonusOf,
   BONUS_ENABLED,
   CORE,
   MIN_MEAL_PHOTOS,
@@ -30,17 +30,17 @@ type Props = {
   record: DayRecord;
   toggle: (date: string, key: HabitKey) => void;
   jokersLeft: number;
-  /** Marca treino/cardio com a foto de prova. */
-  markWithProof: (date: string, kind: ProofKind, photo: Blob) => Promise<boolean>;
+  /** Marca com as fotos de prova (caminhada). */
+  markWithProof: (date: string, kind: ProofKind, photos: Blob[]) => Promise<boolean>;
 };
 
 export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Props) {
   const navigate = useNavigate();
   const [proof, setProof] = useState<ProofKind | null>(null);
   const v2 = record.date >= RULES_V2;
-  // cardio: para marcar, pede o print; para desmarcar, só toca
+  // caminhada (a partir de 21/10): para marcar, pede o print; para desmarcar, só toca
   const tap = (k: HabitKey) => {
-    const marked = k === 'cardio' && !!record.cardio;
+    const marked = k === 'passos' ? !!record.passos && !!record.provaPassos : k === 'cardio' && !!record.cardio;
     if (needsProof(k, record.date) && !marked) return setProof(k as ProofKind);
     toggle(record.date, k);
   };
@@ -149,10 +149,10 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
 
       {/* bônus */}
       <p className="relative text-[11px] font-medium text-muted-foreground mt-4 mb-2">
-        {BONUS_ENABLED ? 'Bônus · exercício extra · +0,5 cada em dia perfeito' : 'Extras'}
+        {!BONUS_ENABLED ? 'Extras' : v2 ? 'Bônus · +1 em dia perfeito' : 'Bônus · exercício extra · +0,5 cada em dia perfeito'}
       </p>
-      <div className="relative grid grid-cols-2 gap-2">
-        {BONUS.map((k) => {
+      <div className={`relative grid gap-2 ${v2 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+        {bonusOf(record.date).map((k) => {
           const t = TONES[k];
           const on = habitDone(k, record);
           return (
@@ -170,7 +170,7 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
               </span>
               <span className="text-[11px] font-medium text-foreground">
                 {t.label}
-                {k === 'cardio' && v2 && <span className="text-muted-foreground"> · {on ? 'com prova' : 'com foto'}</span>}
+                {k === 'passos' && v2 && <span className="text-muted-foreground"> · {on ? 'com prova ✓' : 'mande o print'}</span>}
               </span>
             </motion.button>
           );
@@ -195,7 +195,7 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
         </span>
       </button>
 
-      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photo) => markWithProof(record.date, kind, photo)} />
+      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photos) => markWithProof(record.date, kind, photos)} />
     </section>
   );
 }

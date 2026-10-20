@@ -5,7 +5,7 @@ import type { CheckKey, Injection, Player, Sleep, Weight } from './rules';
 import type { Challenge } from './challenges';
 
 // por data; prova* = já mandou a foto de prova do treino/cardio
-type Checks = Record<string, Partial<Record<CheckKey | 'provaTreino' | 'provaCardio', boolean>>>;
+type Checks = Record<string, Partial<Record<CheckKey | 'provaTreino' | 'provaCardio' | 'provaPassos', boolean>>>;
 
 export type ProfileData = { heightCm?: number; goalKg?: number; waterGoalMl?: number; avatar?: string };
 

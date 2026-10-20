@@ -11,7 +11,8 @@ export const PRIZE = 'R$ 400';
 export const JOKERS = 2;
 export const DEFAULT_WATER_GOAL_ML = 3000;
 /**
- * A partir deste dia: cardio só vale com foto de prova (print do Strava/Saúde), e "Comeu direito"
+ * A partir deste dia: o bônus é só a caminhada de 4 km+ (+1, com print do Strava/Saúde;
+ * pode mandar mais de uma foto), e "Comeu direito"
  * vira automático (no mínimo 2 refeições com foto no dia). Antes, vale a regra antiga.
  */
 export const RULES_V2 = '2026-10-21';
@@ -32,13 +33,14 @@ export const HABITS: { key: HabitKey; label: string; emoji: string; auto?: boole
   { key: 'doce', label: 'Zero doce', emoji: '🚫' },
   { key: 'coringa', label: 'Coringa', emoji: '🃏' },
   { key: 'cardio', label: 'Cardio', emoji: '🏃' },
-  { key: 'passos', label: 'Caminhada 4 km', emoji: '🚶' },
+  { key: 'passos', label: 'Caminhada 4 km+', emoji: '🚶' },
 ];
 export const CORE: HabitKey[] = ['agua', 'treino', 'comida', 'doce'];
-// exercício extra além do treino (proteína saiu; injeção não vale ponto)
+// bônus até 20/10: cardio e passos (+0,5 cada); a partir de 21/10: só caminhada 4 km+ (+1)
 export const BONUS: HabitKey[] = ['cardio', 'passos'];
-/** Só o cardio precisa de foto de prova (a partir de RULES_V2); treino é só marcar. */
-export const needsProof = (k: HabitKey, date: string) => date >= RULES_V2 && k === 'cardio';
+export const bonusOf = (date: string): HabitKey[] => (date >= RULES_V2 ? ['passos'] : BONUS);
+/** Caminhada precisa de print (a partir de RULES_V2); treino é só marcar. */
+export const needsProof = (k: HabitKey, date: string) => date >= RULES_V2 && k === 'passos';
 
 export type DayRecord = {
   date: string;
@@ -47,9 +49,10 @@ export type DayRecord = {
   treino: boolean;
   /** Refeições com foto no dia (vem da página Refeições). */
   mealPhotos?: number;
-  /** Fotos de prova enviadas (treino/cardio). */
+  /** Fotos de prova enviadas (treino/cardio/caminhada). */
   provaTreino?: boolean;
   provaCardio?: boolean;
+  provaPassos?: boolean;
 } & Partial<Record<CheckKey, boolean>>;
 
 export type Weight = { date: string; kg: number };
@@ -121,6 +124,7 @@ export const habitDone = (k: HabitKey, r?: DayRecord): boolean => {
   if (r.date >= RULES_V2) {
     if (k === 'comida') return (r.mealPhotos ?? 0) >= MIN_MEAL_PHOTOS;
     if (k === 'cardio') return !!r.cardio && !!r.provaCardio;
+    if (k === 'passos') return !!r.passos && !!r.provaPassos;
   }
   return !!r[k as 'treino' | CheckKey];
 };
@@ -134,7 +138,11 @@ export const jokersLeftOf = (used: number) => Math.max(0, JOKERS - used);
 
 export const dayPoints = (r?: DayRecord) => {
   if (!isPerfect(r)) return 0;
-  const bonus = BONUS_ENABLED ? Math.min(1, 0.5 * BONUS.filter((k) => habitDone(k, r)).length) : 0;
+  const bonus = !BONUS_ENABLED
+    ? 0
+    : r!.date >= RULES_V2
+      ? habitDone('passos', r) ? 1 : 0
+      : Math.min(1, 0.5 * BONUS.filter((k) => habitDone(k, r)).length);
   return 1 + bonus;
 };
 

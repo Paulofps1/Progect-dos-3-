@@ -1,37 +1,39 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ShieldCheck } from 'lucide-react';
-import { proofUrl, type ProofKind } from '@/lib/desafio/proofs';
+import { proofUrls, type ProofKind } from '@/lib/desafio/proofs';
 
-// Miniaturas das fotos de prova (treino/cardio) de alguém num dia. Toque amplia.
-export function ProofThumbs({ userId, date, treino, cardio }: { userId: string; date: string; treino: boolean; cardio: boolean }) {
-  const [urls, setUrls] = useState<Partial<Record<ProofKind, string>>>({});
+// Miniaturas das fotos de prova de alguém num dia (caminhada; antes também treino e
+// cardio). Uma prova pode ter várias fotos. Toque amplia.
+
+const LABEL: Record<ProofKind, string> = { passos: 'Caminhada', treino: 'Treino', cardio: 'Cardio' };
+
+export function ProofThumbs({ userId, date, kinds }: { userId: string; date: string; kinds: ProofKind[] }) {
+  const [items, setItems] = useState<{ kind: ProofKind; url: string }[]>([]);
   const [big, setBig] = useState<string | null>(null);
+  const key = kinds.join(',');
 
   useEffect(() => {
     let alive = true;
-    const kinds = ([treino && 'treino', cardio && 'cardio'].filter(Boolean) as ProofKind[]);
-    Promise.all(kinds.map(async (k) => [k, await proofUrl(userId, date, k)] as const)).then((pairs) => {
-      if (alive) setUrls(Object.fromEntries(pairs.filter(([, u]) => u)));
-    });
+    Promise.all(key ? key.split(',').map(async (k) => (await proofUrls(userId, date, k as ProofKind)).map((url) => ({ kind: k as ProofKind, url }))) : []).then(
+      (lists) => alive && setItems(lists.flat()),
+    );
     return () => {
       alive = false;
     };
-  }, [userId, date, treino, cardio]);
+  }, [userId, date, key]);
 
-  if (!treino && !cardio) return <p className="text-[11px] text-muted-foreground">Sem fotos de prova hoje.</p>;
+  if (!kinds.length) return <p className="text-[11px] text-muted-foreground">Sem fotos de prova hoje.</p>;
   return (
-    <div className="flex gap-2">
-      {(['treino', 'cardio'] as ProofKind[]).map((k) =>
-        (k === 'treino' ? treino : cardio) ? (
-          <button key={k} onClick={() => urls[k] && setBig(urls[k]!)} className="relative w-20 h-20 rounded-xl overflow-hidden bg-secondary">
-            {urls[k] && <img src={urls[k]} alt={`Prova de ${k}`} className="w-full h-full object-cover" />}
-            <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] py-0.5 flex items-center justify-center gap-0.5">
-              <ShieldCheck className="w-3 h-3" /> {k === 'treino' ? 'Treino' : 'Cardio'}
-            </span>
-          </button>
-        ) : null,
-      )}
+    <div className="flex gap-2 flex-wrap">
+      {items.map(({ kind, url }) => (
+        <button key={url} onClick={() => setBig(url)} className="relative w-20 h-20 rounded-xl overflow-hidden bg-secondary">
+          <img src={url} alt={`Prova de ${LABEL[kind]}`} className="w-full h-full object-cover" />
+          <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] py-0.5 flex items-center justify-center gap-0.5">
+            <ShieldCheck className="w-3 h-3" /> {LABEL[kind]}
+          </span>
+        </button>
+      ))}
       {big &&
         createPortal(
           <button onClick={() => setBig(null)} aria-label="Fechar foto" className="fixed inset-0 z-[90] bg-black/90 flex items-center justify-center p-4">

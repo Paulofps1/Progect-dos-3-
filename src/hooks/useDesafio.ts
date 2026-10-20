@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { localDesafio, type ProfileData } from '@/lib/desafio/localStore';
 import { challengePoints } from '@/lib/desafio/challenges';
-import { removeProof, uploadProof, type ProofKind } from '@/lib/desafio/proofs';
+import { removeProofs, uploadProofs, type ProofKind } from '@/lib/desafio/proofs';
 import { IS_DEMO, loadMine, saveMine, type Kind } from '@/lib/desafio/remote';
 import {
   DEFAULT_WATER_GOAL_ML,
@@ -204,7 +204,7 @@ export function useDesafio() {
           const { error } = await supabase.from('workout_sessions').delete().eq('user_id', userId).eq('date', date);
           if (error) return toast.error('Não desmarcou o treino');
           if (checks[date]?.provaTreino) {
-            removeProof(userId, date, 'treino');
+            removeProofs(userId, date, 'treino');
             const next = { ...checks, [date]: { ...checks[date], provaTreino: false } };
             setChecks(next);
             localDesafio.setChecks(userId, next);
@@ -234,8 +234,10 @@ export function useDesafio() {
       if (k === 'coringa' && !cur && Object.values(checks).filter((c) => c.coringa).length >= JOKERS) {
         return toast.error('Os coringas acabaram');
       }
-      const next = { ...checks, [date]: { ...checks[date], [k]: !cur, ...(k === 'cardio' && cur ? { provaCardio: false } : {}) } };
-      if (k === 'cardio' && cur && checks[date]?.provaCardio) removeProof(userId, date, 'cardio');
+      // desmarcar cardio/caminhada apaga também as fotos de prova daquele dia
+      const proofFlag = k === 'cardio' ? 'provaCardio' : k === 'passos' ? 'provaPassos' : null;
+      const next = { ...checks, [date]: { ...checks[date], [k]: !cur, ...(proofFlag && cur ? { [proofFlag]: false } : {}) } };
+      if (proofFlag && cur && checks[date]?.[proofFlag]) removeProofs(userId, date, k as ProofKind);
       setChecks(next);
       localDesafio.setChecks(userId, next);
       push('checks', next);
@@ -243,11 +245,11 @@ export function useDesafio() {
     [userId, today, trained, checks, injections, saveInjections, push],
   );
 
-  // marca treino/cardio já com a foto de prova (obrigatória a partir de RULES_V2)
+  // marca já com as fotos de prova (a caminhada exige a partir de RULES_V2)
   const markWithProof = useCallback(
-    async (date: string, kind: ProofKind, photo: Blob) => {
-      if (!userId || date > today) return false;
-      if (!(await uploadProof(userId, date, kind, photo))) {
+    async (date: string, kind: ProofKind, photos: Blob[]) => {
+      if (!userId || date > today || !photos.length) return false;
+      if (!(await uploadProofs(userId, date, kind, photos))) {
         toast.error('Não enviou a prova, confira a internet');
         return false;
       }
@@ -261,8 +263,8 @@ export function useDesafio() {
         }
         setTrained((s) => new Set(s).add(date));
       }
-      const flag = kind === 'treino' ? 'provaTreino' : 'provaCardio';
-      const next = { ...checks, [date]: { ...checks[date], [flag]: true, ...(kind === 'cardio' ? { cardio: true } : {}) } };
+      const flag = kind === 'treino' ? 'provaTreino' : kind === 'cardio' ? 'provaCardio' : 'provaPassos';
+      const next = { ...checks, [date]: { ...checks[date], [flag]: true, ...(kind === 'treino' ? {} : { [kind]: true }) } };
       setChecks(next);
       localDesafio.setChecks(userId, next);
       push('checks', next);

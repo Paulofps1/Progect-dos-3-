@@ -14,7 +14,7 @@ import { challengePoints } from '@/lib/desafio/challenges';
 import { ProofThumbs } from '@/components/desafio/ProofThumbs';
 import { PlayerPicker } from '@/components/desafio/DesafioParts';
 import {
-  BONUS,
+  bonusOf,
   BONUS_ENABLED,
   CORE,
   habitDone,
@@ -180,8 +180,8 @@ const Achievements = () => {
             </RuleTile>
 
             <div className="grid grid-cols-2 gap-2.5">
-              <RuleTile icon={<Plus className="w-5 h-5 text-orange-500" />} tint="bg-orange-500/15" value={BONUS_ENABLED ? '+0,5' : 'Off'} title="Bônus">
-                {BONUS_ENABLED ? 'Exercício extra: cardio (com print) ou caminhada de 4 km no dia. Até +1 por dia, só em dia perfeito.' : 'Desligados por enquanto.'}
+              <RuleTile icon={<Plus className="w-5 h-5 text-orange-500" />} tint="bg-orange-500/15" value={BONUS_ENABLED ? '+1' : 'Off'} title="Bônus">
+                {BONUS_ENABLED ? 'Caminhada de 4 km ou mais no dia, com print do Strava ou app Saúde (pode mandar várias fotos). Só em dia perfeito.' : 'Desligados por enquanto.'}
               </RuleTile>
               <RuleTile icon={<Flame className="w-5 h-5 text-red-500" />} tint="bg-red-500/15" value="+1" title="Sequência">
                 A cada 7 dias perfeitos seguidos.
@@ -233,7 +233,7 @@ function TodayOf({ record, userId, today }: { record?: DayRecord; userId?: strin
   return (
     <div className="pb-3 pl-11 space-y-2">
       <div className="flex flex-wrap gap-1.5">
-        {[...CORE, ...BONUS].map((k) => {
+        {[...CORE, ...bonusOf(record.date)].map((k) => {
           const t = TONES[k];
           const on = habitDone(k, record);
           return (
@@ -244,7 +244,13 @@ function TodayOf({ record, userId, today }: { record?: DayRecord; userId?: strin
           );
         })}
       </div>
-      {userId && <ProofThumbs userId={userId} date={today} treino={!!record.provaTreino} cardio={!!record.provaCardio} />}
+      {userId && (
+        <ProofThumbs
+          userId={userId}
+          date={today}
+          kinds={(['passos', 'cardio', 'treino'] as const).filter((k) => record[k === 'passos' ? 'provaPassos' : k === 'cardio' ? 'provaCardio' : 'provaTreino'])}
+        />
+      )}
     </div>
   );
 }
