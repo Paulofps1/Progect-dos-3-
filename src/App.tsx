@@ -22,6 +22,8 @@ import Challenges from "./pages/Challenges";
 import Workouts from "./pages/Workouts";
 import Injection from "./pages/Injection";
 import Night from "./pages/Night";
+import Body from "./pages/Body";
+import Evolution from "./pages/Evolution";
 import History from "./pages/History";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,8 @@ const AppRoutes = () => (
     <Route path="/workouts" element={<Workouts />} />
     <Route path="/injecao" element={<Injection />} />
     <Route path="/noite" element={<Night />} />
+    <Route path="/corpo" element={<Body />} />
+    <Route path="/evolucao" element={<Evolution />} />
     <Route path="/historico" element={<History />} />
     <Route path="*" element={<NotFound />} />
   </Routes>

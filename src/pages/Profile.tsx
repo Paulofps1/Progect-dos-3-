@@ -2,13 +2,12 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDesafio } from '@/hooks/useDesafio';
-import { BodyCard } from '@/components/desafio/BodyCard';
-import { BodyPhotos } from '@/components/desafio/BodyPhotos';
+import { InstallSheet, isInstalled } from '@/components/desafio/InstallApp';
 import { num } from '@/lib/desafio/rules';
 import AppLayout from '@/components/app/AppLayout';
 import { AvatarCropper, saveAvatar } from '@/components/desafio/AvatarCropper';
 import SectionHeader from '@/components/app/SectionHeader';
-import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy } from 'lucide-react';
+import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy, Scale, Images, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 const Profile = () => {
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const desafio = useDesafio();
+  const [installOpen, setInstallOpen] = useState(false);
   const navigate = useNavigate();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
@@ -67,8 +67,11 @@ const Profile = () => {
   }
 
   const menuItems = [
+    { icon: Scale, label: 'IMC e meta de peso', action: () => navigate('/corpo'), desc: 'Calculadora de IMC e quanto falta' },
+    { icon: Images, label: 'Evolução em fotos', action: () => navigate('/evolucao'), desc: 'Seu antes e depois' },
     { icon: History, label: 'Meu histórico', action: () => navigate('/historico'), desc: 'Seus dias, refeições, água, treinos e injeções' },
     { icon: User, label: 'Editar perfil', action: () => navigate('/edit-profile'), desc: 'Nome e foto' },
+    ...(isInstalled() ? [] : [{ icon: Download, label: 'Instalar o app', action: () => setInstallOpen(true), desc: 'Na tela de início, como app nativo' }]),
   ];
 
   return (
@@ -162,9 +165,6 @@ const Profile = () => {
             </div>
           </motion.div>
 
-
-          <BodyCard d={desafio} />
-          {user && <BodyPhotos userId={user.id} />}
 
           {/* Menu Items */}
           <motion.div 
@@ -277,6 +277,7 @@ const Profile = () => {
 
         {/* Delete Account Dialog */}
       </motion.div>
+      <InstallSheet open={installOpen} onClose={() => setInstallOpen(false)} />
     </AppLayout>
   );
 };
