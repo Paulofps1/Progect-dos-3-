@@ -12,6 +12,10 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [react()],
+  // versão no rodapé do Perfil (commit que a Vercel publicou), para saber se o celular atualizou
+  define: {
+    __APP_VERSION__: JSON.stringify((process.env.VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)),
+  },
   resolve: {
     alias: [
       ...(mode === "demo"
