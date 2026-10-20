@@ -2,11 +2,14 @@
 // corpo de quem está logado. Roda no celular da pessoa: entra na conta antiga com o
 // mesmo e-mail e senha internos, baixa e grava no banco novo. Pode rodar de novo:
 // refeição já trazida não é duplicada (meal_items guarda o id antigo em "origem").
+// Foto que nunca subiu para o banco antigo só existe no celular que tirou, guardada
+// pelo endereço antigo (progetodostres): rodando de lá, ela também vem.
 
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { PLAYER_PASSWORD } from './accounts';
 import { saveMealPhotos } from './mealCloud';
+import { mealPhotos } from './localStore';
 
 // banco antigo (Lovable Cloud); a chave é a pública do app antigo
 const OLD_URL = 'https://vjgzpipbraqvktwyemki.lovable.cloud';
@@ -38,20 +41,35 @@ export async function migrateFromOld(email: string, newUserId: string, onStep: (
       onStep(`Refeição ${i + 1} de ${meals!.length}…`);
       const { data: already } = await supabase
         .from('meals')
-        .select('id')
+        .select('id, meal_items')
         .eq('user_id', newUserId)
         .contains('meal_items', [{ origem: m.id }])
         .limit(1);
-      if (already?.length) {
+      const prev = already?.[0];
+      const prevPhotos = Array.isArray(prev?.meal_items) ? ((prev.meal_items as { fotos?: number }[])[0]?.fotos ?? 0) : 0;
+      if (prev && prevPhotos > 0) {
         result.skipped++;
         continue;
       }
-      // fotos da refeição na pasta antiga (<id antigo>/<refeição>/<n>.jpg)
+      // fotos da refeição na pasta antiga (<id antigo>/<refeição>/<n>.jpg)…
       const { data: files } = await old.storage.from(BUCKET).list(`${oldId}/${m.id}`);
-      const photos: Blob[] = [];
+      let photos: Blob[] = [];
       for (const f of [...(files || [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) {
         const dl = await old.storage.from(BUCKET).download(`${oldId}/${m.id}/${f.name}`);
         if (dl.data) photos.push(dl.data);
+      }
+      // …ou, se nunca subiram, as que ficaram neste celular (guardadas pelo id antigo)
+      if (!photos.length) photos = await mealPhotos.get(m.id).catch(() => [] as Blob[]);
+
+      if (prev) {
+        // já tinha vindo sem foto: só completa as fotos
+        if (photos.length) {
+          await supabase.from('meals').update({ meal_items: [{ fotos: photos.length, origem: m.id }] }).eq('id', prev.id);
+          await saveMealPhotos(newUserId, prev.id, photos);
+          result.photos += photos.length;
+          result.meals++;
+        } else result.skipped++;
+        continue;
       }
       const { data: created, error: insErr } = await supabase
         .from('meals')
