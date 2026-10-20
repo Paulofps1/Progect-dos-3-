@@ -222,7 +222,7 @@ const Meals = () => {
               <p className="text-muted-foreground text-xs mt-1">Toque para tirar a foto do prato</p>
             </button>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 items-start">
               {meals.map((meal) => {
                 const info = typeOf(meal.meal_type);
                 const Icon = info?.icon || Utensils;

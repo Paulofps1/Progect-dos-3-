@@ -59,7 +59,7 @@ const Water = () => {
   const navigate = useNavigate();
   // abre com o último total visto hoje (não conta de 0 toda vez que entra na tela)
   const [todayTotal, setTodayTotal] = useState(() => (lastSeen?.date === todayStr() ? lastSeen.total : 0));
-  const [waterGoal, setWaterGoal] = useState(DEFAULT_WATER_GOAL_ML);
+  const [waterGoal, setWaterGoal] = useState(() => desafio.waterGoalMl || DEFAULT_WATER_GOAL_ML);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showManualGoal, setShowManualGoal] = useState(false);

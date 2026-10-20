@@ -100,7 +100,7 @@ const Today = () => {
       carbs: 0,
       fat: 0,
       water,
-      waterTarget: profile?.water_goal_ml || DEFAULT_WATER_GOAL_ML,
+      waterTarget: DEFAULT_WATER_GOAL_ML, // (a meta de verdade é a do desafio: desafio.waterGoalMl)
     };
     const nextMeals = (mealsRes.data as Meal[]) || [];
     setDayData(next);
@@ -133,7 +133,8 @@ const Today = () => {
   };
 
   const nextMeal = getNextMealSuggestion();
-  const waterPct = dayData.waterTarget > 0 ? Math.min(100, Math.round((dayData.water / dayData.waterTarget) * 100)) : 0;
+  // mesma meta do checklist e da página Água (perfil do desafio)
+  const waterPct = Math.min(100, Math.round((dayData.water / Math.max(1, desafio.waterGoalMl)) * 100));
 
   const motivationalMessages = [
     'Cada escolha saudável conta!',
