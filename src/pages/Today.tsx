@@ -86,20 +86,19 @@ const Today = () => {
 
   const fetchDayData = useCallback(async () => {
     if (!user) return;
-    const [consumptionRes, waterRes, mealsRes] = await Promise.all([
-      supabase.from('daily_consumption').select('*').eq('user_id', user.id).eq('date', today).maybeSingle(),
+    // (calorias saíram do app: a tabela daily_consumption não é mais lida)
+    const [waterRes, mealsRes] = await Promise.all([
       supabase.from('water_consumption').select('amount_ml').eq('user_id', user.id).eq('date', today),
       supabase.from('meals').select('*').eq('user_id', user.id).eq('date', today).order('created_at', { ascending: false }),
     ]);
 
-    const consumption = consumptionRes.data;
     const water = (waterRes.data || []).reduce((s: number, w: { amount_ml: number | null }) => s + (w.amount_ml || 0), 0);
 
     const next: DayData = {
-      calories: Number(consumption?.calories) || 0,
-      protein: Number(consumption?.protein) || 0,
-      carbs: Number(consumption?.carbs) || 0,
-      fat: Number(consumption?.fat) || 0,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
       water,
       waterTarget: profile?.water_goal_ml || DEFAULT_WATER_GOAL_ML,
     };
@@ -120,7 +119,6 @@ const Today = () => {
   useEffect(() => {
     if (!user) return;
     const channels = [
-      supabase.channel('today-consumption').on('postgres_changes', { event: '*', schema: 'public', table: 'daily_consumption', filter: `user_id=eq.${user.id}` }, () => fetchDayData()).subscribe(),
       supabase.channel('today-water').on('postgres_changes', { event: '*', schema: 'public', table: 'water_consumption', filter: `user_id=eq.${user.id}` }, () => fetchDayData()).subscribe(),
       supabase.channel('today-meals').on('postgres_changes', { event: '*', schema: 'public', table: 'meals', filter: `user_id=eq.${user.id}` }, () => fetchDayData()).subscribe(),
     ];
