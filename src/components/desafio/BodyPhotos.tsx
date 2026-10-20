@@ -54,13 +54,17 @@ export function BodyPhotos({ userId }: { userId: string }) {
         demoPhotos.push({ name, date: todayStr(), url: URL.createObjectURL(blob) });
         setPhotos([...demoPhotos]);
       } else {
-        const { error } = await supabase.storage.from(BUCKET).upload(`${dir}/${name}`, blob, { contentType: 'image/jpeg' });
+        const { error } = await supabase.storage.from(BUCKET).upload(`${dir}/${name}`, blob, { contentType: 'image/jpeg', upsert: true });
         if (error) throw error;
-        await load();
+        // mostra na hora com a própria foto; a lista do banco vem em seguida
+        setPhotos((cur) => [...cur, { name, date: todayStr(), url: URL.createObjectURL(blob) }]);
+        load();
       }
       toast.success('Foto adicionada à sua evolução');
-    } catch {
-      toast.error('Não salvou a foto, confira a internet');
+    } catch (e) {
+      // mostra o motivo de verdade (ajuda a descobrir quando não salva)
+      const msg = e instanceof Error ? e.message : (e as { message?: string })?.message;
+      toast.error(`Não salvou a foto${msg ? `: ${msg}` : ''}`);
     } finally {
       setBusy(false);
     }
