@@ -165,7 +165,7 @@ const Achievements = () => {
             <h3 className="text-sm font-semibold text-foreground px-1">Regras</h3>
 
             <RuleTile wide icon={<CalendarCheck className="w-5 h-5 text-primary" />} tint="bg-primary/15" value="1 pt" title="Dia perfeito">
-              <span className="block">Fechar os 4 no mesmo dia. Treino precisa de foto de prova; pratos = no mínimo 2 refeições com foto:</span>
+              <span className="block">Fechar os 4 no mesmo dia (pratos = no mínimo 2 refeições com foto):</span>
               <span className="flex flex-wrap gap-1.5 mt-2">
                 {CORE.map((k) => {
                   const t = TONES[k];

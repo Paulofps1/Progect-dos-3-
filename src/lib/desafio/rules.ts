@@ -11,7 +11,7 @@ export const PRIZE = 'R$ 400';
 export const JOKERS = 2;
 export const DEFAULT_WATER_GOAL_ML = 3000;
 /**
- * A partir deste dia: treino e cardio só valem com foto de prova, e "Comeu direito"
+ * A partir deste dia: cardio só vale com foto de prova (print do Strava/Saúde), e "Comeu direito"
  * vira automático (no mínimo 2 refeições com foto no dia). Antes, vale a regra antiga.
  */
 export const RULES_V2 = '2026-10-21';
@@ -37,9 +37,8 @@ export const HABITS: { key: HabitKey; label: string; emoji: string; auto?: boole
 export const CORE: HabitKey[] = ['agua', 'treino', 'comida', 'doce'];
 // exercício extra além do treino (proteína saiu; injeção não vale ponto)
 export const BONUS: HabitKey[] = ['cardio', 'passos'];
-/** Hábitos que precisam de foto de prova (a partir de RULES_V2). */
-export const PROOF: ('treino' | 'cardio')[] = ['treino', 'cardio'];
-export const needsProof = (k: HabitKey, date: string) => date >= RULES_V2 && (k === 'treino' || k === 'cardio');
+/** Só o cardio precisa de foto de prova (a partir de RULES_V2); treino é só marcar. */
+export const needsProof = (k: HabitKey, date: string) => date >= RULES_V2 && k === 'cardio';
 
 export type DayRecord = {
   date: string;
@@ -121,7 +120,6 @@ export const habitDone = (k: HabitKey, r?: DayRecord): boolean => {
   if (k === 'agua') return r.waterMl >= r.waterGoalMl;
   if (r.date >= RULES_V2) {
     if (k === 'comida') return (r.mealPhotos ?? 0) >= MIN_MEAL_PHOTOS;
-    if (k === 'treino') return r.treino && !!r.provaTreino;
     if (k === 'cardio') return !!r.cardio && !!r.provaCardio;
   }
   return !!r[k as 'treino' | CheckKey];

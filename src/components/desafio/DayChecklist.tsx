@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ShieldCheck, Ticket } from 'lucide-react';
+import { Check, Ticket } from 'lucide-react';
 import { TONES } from './tones';
 import { ProofSheet } from './ProofSheet';
 import type { ProofKind } from '@/lib/desafio/proofs';
@@ -38,13 +38,10 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
   const navigate = useNavigate();
   const [proof, setProof] = useState<ProofKind | null>(null);
   const v2 = record.date >= RULES_V2;
-  // treino/cardio: para marcar, pede a foto; para desmarcar, só toca
+  // cardio: para marcar, pede o print; para desmarcar, só toca
   const tap = (k: HabitKey) => {
-    const marked = k === 'treino' ? record.treino : k === 'cardio' ? !!record.cardio : false;
-    if (needsProof(k, record.date) && !habitDone(k, record)) {
-      if (k === 'treino' && marked && !record.provaTreino) return setProof('treino');
-      if (!marked) return setProof(k as ProofKind);
-    }
+    const marked = k === 'cardio' && !!record.cardio;
+    if (needsProof(k, record.date) && !marked) return setProof(k as ProofKind);
     toggle(record.date, k);
   };
   const perfect = isPerfect(record);
@@ -111,9 +108,7 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
           const isMeals = k === 'comida' && v2; // automático: conta as refeições com foto
           const hint = isMeals
             ? `${Math.min(record.mealPhotos ?? 0, MIN_MEAL_PHOTOS)} de ${MIN_MEAL_PHOTOS} com foto`
-            : k === 'treino' && v2
-              ? on ? 'Com prova' : 'Toque e mande a foto'
-              : on ? 'Feito' : 'Toque para marcar';
+            : on ? 'Feito' : 'Toque para marcar';
           return (
             <motion.button
               key={k}
@@ -144,7 +139,6 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
                 </>
               ) : (
                 <span className="block text-[11px] text-muted-foreground">
-                  {k === 'treino' && on && v2 && <ShieldCheck className="inline w-3 h-3 mr-0.5 -mt-0.5 text-primary" />}
                   {hint}
                 </span>
               )}
