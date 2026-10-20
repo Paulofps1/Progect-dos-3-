@@ -10,7 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDesafio } from '@/hooks/useDesafio';
 import { PlayerPicker } from '@/components/desafio/DesafioParts';
 import { DayChecklist } from '@/components/desafio/DayChecklist';
-import { InstallBanner } from '@/components/desafio/InstallApp';
 import { DEFAULT_WATER_GOAL_ML, fmtHours, jokersLeftOf, num } from '@/lib/desafio/rules';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -197,8 +196,6 @@ const Today = () => {
 
           {/* ── Desafio do dia ── */}
           {!desafio.player && !desafio.loading && <PlayerPicker onPick={desafio.choosePlayer} />}
-          <InstallBanner />
-
           <DayChecklist
             record={desafio.record(today)}
             toggle={desafio.toggle}

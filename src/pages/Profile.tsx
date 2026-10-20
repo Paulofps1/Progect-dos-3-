@@ -70,8 +70,15 @@ const Profile = () => {
     { icon: Scale, label: 'IMC e meta de peso', action: () => navigate('/corpo'), desc: 'Calculadora de IMC e quanto falta' },
     { icon: Images, label: 'Evolução em fotos', action: () => navigate('/evolucao'), desc: 'Seu antes e depois' },
     { icon: History, label: 'Meu histórico', action: () => navigate('/historico'), desc: 'Seus dias, refeições, água, treinos e injeções' },
+  ];
+  const settingsItems = [
     { icon: User, label: 'Editar perfil', action: () => navigate('/edit-profile'), desc: 'Nome e foto' },
-    ...(isInstalled() ? [] : [{ icon: Download, label: 'Instalar o app', action: () => setInstallOpen(true), desc: 'Na tela de início, como app nativo' }]),
+    {
+      icon: Download,
+      label: 'Instalar o app',
+      action: () => setInstallOpen(true),
+      desc: isInstalled() ? 'Já está na tela de início deste aparelho' : 'Na tela de início, como app nativo',
+    },
   ];
 
   return (
@@ -174,6 +181,33 @@ const Profile = () => {
             className="glass-card motion-card rounded-2xl overflow-hidden"
           >
             {menuItems.map((menuItem, index) => (
+              <motion.button
+                key={index}
+                whileTap={{ scale: 0.98 }}
+                onClick={menuItem.action}
+                className="w-full flex items-center gap-4 px-5 py-4 border-b border-border/30 last:border-0 transition-colors hover:bg-secondary/30"
+              >
+                <div className="w-10 h-10 bg-secondary/50 rounded-xl flex items-center justify-center">
+                  <menuItem.icon className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-medium text-foreground">{menuItem.label}</span>
+                  <p className="text-xs text-muted-foreground">{menuItem.desc}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
+              </motion.button>
+            ))}
+          </motion.div>
+
+          {/* Configurações */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 -mb-3">Configurações</p>
+          <motion.div 
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.32 }}
+            className="glass-card motion-card rounded-2xl overflow-hidden"
+          >
+            {settingsItems.map((menuItem, index) => (
               <motion.button
                 key={index}
                 whileTap={{ scale: 0.98 }}

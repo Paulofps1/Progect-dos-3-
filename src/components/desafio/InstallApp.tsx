@@ -5,10 +5,8 @@ import { Download, PlusSquare, Share, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { canPrompt, isInstalled, isIOS, onInstallChange, promptInstall } from '@/lib/desafio/install';
 
-// "Instalar o app": coloca o Desafio na tela de início, abrindo em tela cheia
-// como um app nativo. Card em Hoje (dá para dispensar) e passo a passo do iPhone.
-
-const HIDE_KEY = 'desafio:instalar-dispensado';
+// "Instalar o app" (Perfil → Configurações): coloca o Desafio na tela de início,
+// abrindo em tela cheia como um app nativo. Botão direto no Android, passo a passo no iPhone.
 
 function useInstallState() {
   const [, force] = useState(0);
@@ -80,48 +78,6 @@ export function InstallSheet({ open, onClose }: { open: boolean; onClose: () => 
       )}
     </AnimatePresence>,
     document.body,
-  );
-}
-
-/** Card discreto em Hoje, só para quem ainda usa pelo navegador. */
-export function InstallBanner() {
-  const { installed } = useInstallState();
-  const [open, setOpen] = useState(false);
-  const [hidden, setHidden] = useState(() => {
-    try {
-      return Number(localStorage.getItem(HIDE_KEY) || 0) > Date.now();
-    } catch {
-      return false;
-    }
-  });
-  if (installed || hidden) return null;
-  return (
-    <>
-      <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 flex items-center gap-3">
-        <span className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-          <Download className="w-5 h-5 text-primary-foreground" />
-        </span>
-        <button onClick={() => setOpen(true)} className="flex-1 min-w-0 text-left">
-          <span className="block text-sm font-semibold text-foreground">Instale o app</span>
-          <span className="block text-xs text-muted-foreground">Abre em tela cheia, direto da tela de início</span>
-        </button>
-        <button
-          onClick={() => {
-            try {
-              localStorage.setItem(HIDE_KEY, String(Date.now() + 7 * 864e5)); // volta em 7 dias
-            } catch {
-              /* só some por agora */
-            }
-            setHidden(true);
-          }}
-          aria-label="Agora não"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-      <InstallSheet open={open} onClose={() => setOpen(false)} />
-    </>
   );
 }
 
