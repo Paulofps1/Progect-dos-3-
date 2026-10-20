@@ -271,6 +271,19 @@ export function useDesafio() {
     [userId, today, trained, checks, push],
   );
 
+  // água de um dia que passou (marcar pelo Resumo): completa até a meta daquele dia
+  const fillWater = useCallback(
+    async (date: string) => {
+      if (!userId || date > today) return;
+      const missing = waterGoalMl - (water[date] || 0);
+      if (missing <= 0) return;
+      const { error } = await supabase.from('water_consumption').insert({ user_id: userId, amount_ml: missing, date });
+      if (error) return toast.error('Não registrou a água');
+      setWater((w) => ({ ...w, [date]: (w[date] || 0) + missing }));
+    },
+    [userId, today, water, waterGoalMl],
+  );
+
   const saveProfileData = useCallback(
     (patch: ProfileData) => {
       if (!userId) return;
@@ -350,6 +363,6 @@ export function useDesafio() {
   return {
     loading, today, player, choosePlayer, days, record, toggle, weights, saveWeight, removeWeight, myStats, reload: load,
     injections, addInjection, removeInjection, nextInjection, setNextInjection,
-    sleep, addSleep, removeSleep, markWithProof, profileData, saveProfileData, waterGoalMl,
+    sleep, addSleep, removeSleep, markWithProof, profileData, saveProfileData, waterGoalMl, fillWater,
   };
 }

@@ -11,6 +11,8 @@ import { useDesafio } from '@/hooks/useDesafio';
 import { supabase } from '@/integrations/supabase/client';
 import { MonthCalendar, PlayerPicker } from '@/components/desafio/DesafioParts';
 import { TONES } from '@/components/desafio/tones';
+import { ProofSheet } from '@/components/desafio/ProofSheet';
+import type { ProofKind } from '@/lib/desafio/proofs';
 import {
   END,
   INITIAL_WEIGHTS,
@@ -26,6 +28,8 @@ import {
   isSunday,
   jokersLeftOf,
   monthDays,
+  needsProof,
+  RULES_V2,
   num,
   type DayRecord,
   type HabitKey,
@@ -119,7 +123,7 @@ const Progress = () => {
             ) : (
               <>
                 <MonthCalendar month={month} setMonth={setMonth} selected={sel} onSelect={setSel} today={d.today} record={d.record} />
-                <DayDetail record={d.record(sel)} today={d.today} />
+                <DayDetail record={d.record(sel)} today={d.today} d={d} />
                 <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border/50">
                   <div>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Média do mês</p>
@@ -176,8 +180,22 @@ function MiniPill({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-/** O que foi feito no dia tocado no calendário (só para ver; marcar é em Hoje). */
-function DayDetail({ record, today }: { record: DayRecord; today: string }) {
+/**
+ * O dia tocado no calendário. Dias que já passaram (desde o início) dá para marcar
+ * aqui também: serve para quem esqueceu de marcar no dia.
+ */
+function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: ReturnType<typeof useDesafio> }) {
+  const navigate = useNavigate();
+  const [proof, setProof] = useState<ProofKind | null>(null);
+  const editable = record.date >= START && record.date <= today;
+  const tap = (k: HabitKey) => {
+    if (!editable) return;
+    const on = habitDone(k, record);
+    if (k === 'agua') return on ? toast('Água de um dia que passou só dá para completar, não tirar') : d.fillWater(record.date);
+    if (k === 'comida' && record.date >= RULES_V2) return navigate('/meals'); // automático: fotos dos pratos
+    if (needsProof(k, record.date) && !record.cardio) return setProof(k as ProofKind);
+    d.toggle(record.date, k);
+  };
   const perfect = isPerfect(record);
   const pts = dayPoints(record);
   const label = record.date === today ? 'Hoje' : format(parseISO(record.date), "EEEE, dd/MM", { locale: ptBR });
@@ -195,17 +213,31 @@ function DayDetail({ record, today }: { record: DayRecord; today: string }) {
           const t = TONES[k];
           const on = habitDone(k, record);
           return (
-            <span
+            <button
               key={k}
               title={t.label}
-              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] ${on ? `${t.bg} text-foreground font-medium` : 'bg-background/60 text-muted-foreground/60 line-through'}`}
+              onClick={() => tap(k)}
+              disabled={!editable}
+              aria-pressed={on}
+              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] ${on ? `${t.bg} text-foreground font-medium` : `bg-background/60 text-muted-foreground/60 ${editable ? '' : 'line-through'}`}`}
             >
               <t.icon className={`w-3.5 h-3.5 ${on ? t.fg : ''}`} />
               {t.label}
-            </span>
+            </button>
           );
         })}
       </div>
+      {editable && record.date !== today && (
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <p className="text-[10px] text-muted-foreground">Esqueceu de marcar? Toque nos itens deste dia.</p>
+          {!isSunday(record.date) && (
+            <button onClick={() => d.toggle(record.date, 'coringa')} className="text-[11px] font-semibold text-amber-600 whitespace-nowrap">
+              {record.coringa ? 'Tirar coringa' : 'Usar coringa'}
+            </button>
+          )}
+        </div>
+      )}
+      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photo) => d.markWithProof(record.date, kind, photo)} />
     </div>
   );
 }
