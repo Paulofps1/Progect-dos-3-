@@ -24,6 +24,7 @@ import Injection from "./pages/Injection";
 import Night from "./pages/Night";
 import Body from "./pages/Body";
 import Evolution from "./pages/Evolution";
+import Migrate from "./pages/Migrate";
 import History from "./pages/History";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const AppRoutes = () => (
     <Route path="/noite" element={<Night />} />
     <Route path="/corpo" element={<Body />} />
     <Route path="/evolucao" element={<Evolution />} />
+    <Route path="/trazer" element={<Migrate />} />
     <Route path="/historico" element={<History />} />
     <Route path="*" element={<NotFound />} />
   </Routes>

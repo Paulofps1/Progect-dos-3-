@@ -7,7 +7,7 @@ import { num } from '@/lib/desafio/rules';
 import AppLayout from '@/components/app/AppLayout';
 import { AvatarCropper, saveAvatar } from '@/components/desafio/AvatarCropper';
 import SectionHeader from '@/components/app/SectionHeader';
-import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy, Scale, Images, Download } from 'lucide-react';
+import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy, Scale, Images, Download, DownloadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +73,7 @@ const Profile = () => {
   ];
   const settingsItems = [
     { icon: User, label: 'Editar perfil', action: () => navigate('/edit-profile'), desc: 'Nome e foto' },
+    { icon: DownloadCloud, label: 'Trazer do app antigo', action: () => navigate('/trazer'), desc: 'Refeições com fotos e evolução' },
     {
       icon: Download,
       label: 'Instalar o app',

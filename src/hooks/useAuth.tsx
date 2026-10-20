@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { slug } from '@/lib/desafio/rules';
+import { PLAYER_PASSWORD, playerEmail } from '@/lib/desafio/accounts';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
@@ -53,9 +53,6 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-// contas fixas dos jogadores (dá para trocar por variáveis de ambiente)
-const PLAYER_EMAIL_DOMAIN = import.meta.env.VITE_DESAFIO_EMAIL_DOMAIN || 'desafiodos3.app';
-const PLAYER_PASSWORD = import.meta.env.VITE_DESAFIO_SENHA || 'desafio-dos-3-2026';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -94,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // do app, não da pessoa). Na 1ª vez a conta é criada. Escolha do grupo: qualquer um
   // pode entrar como qualquer um.
   const enterAs = async (player: string) => {
-    const email = `${slug(player)}@${PLAYER_EMAIL_DOMAIN}`;
+    const email = playerEmail(player);
     const first = await supabase.auth.signInWithPassword({ email, password: PLAYER_PASSWORD });
     if (!first.error) return { error: null };
     if (!/invalid login/i.test(first.error.message)) return { error: first.error };
