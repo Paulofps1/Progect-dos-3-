@@ -22,6 +22,7 @@ import Challenges from "./pages/Challenges";
 import Workouts from "./pages/Workouts";
 import Injection from "./pages/Injection";
 import Night from "./pages/Night";
+import { ErrorBoundary } from "@/components/app/ErrorBoundary";
 import Body from "./pages/Body";
 import Evolution from "./pages/Evolution";
 import Migrate from "./pages/Migrate";
@@ -64,14 +65,16 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Router>
-          {IS_DEMO && <DemoBanner />}
-          <AuthProvider>
-            <SidebarProvider>
-              <AppRoutes />
-            </SidebarProvider>
-          </AuthProvider>
-        </Router>
+        <ErrorBoundary>
+          <Router>
+            {IS_DEMO && <DemoBanner />}
+            <AuthProvider>
+              <SidebarProvider>
+                <AppRoutes />
+              </SidebarProvider>
+            </AuthProvider>
+          </Router>
+        </ErrorBoundary>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
