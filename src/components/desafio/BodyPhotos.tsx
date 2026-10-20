@@ -63,8 +63,11 @@ export function BodyPhotos({ userId }: { userId: string }) {
       toast.success('Foto adicionada à sua evolução');
     } catch (e) {
       // mostra o motivo de verdade (ajuda a descobrir quando não salva)
-      const msg = e instanceof Error ? e.message : (e as { message?: string })?.message;
-      toast.error(`Não salvou a foto${msg ? `: ${msg}` : ''}`);
+      // erro completo do serviço de fotos (código, motivo e o endereço usado)
+      const err = e as { message?: string; statusCode?: string | number; error?: string; status?: number };
+      const detail = [err?.statusCode ?? err?.status, err?.error, err?.message].filter(Boolean).join(' · ');
+      const host = (import.meta.env.VITE_SUPABASE_URL || '').replace(/^https?:\/\//, '').split('.')[0];
+      toast.error(`Não salvou a foto: ${detail || String(e)} [${host}/${BUCKET}]`, { duration: 15000 });
     } finally {
       setBusy(false);
     }
