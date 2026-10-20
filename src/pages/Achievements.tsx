@@ -76,7 +76,7 @@ const Achievements = () => {
           <div className="rounded-3xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent border border-primary/20 p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Desafio dos 3</p>
+                <p className="text-xs text-muted-foreground">Desafio dos 4</p>
                 <h1 className="text-2xl font-bold text-foreground">Placar</h1>
               </div>
               <span className="rounded-full bg-foreground text-background text-xs font-bold px-3 py-1">{PRIZE}</span>

@@ -1,11 +1,13 @@
-// Regras do Desafio dos 3. Funções puras: sem React, sem banco.
+// Regras do Desafio dos 4. Funções puras: sem React, sem banco.
 
-export const PLAYERS = ['Paulo', 'Arthur', 'Rafaela'] as const;
+export const PLAYERS = ['Paulo', 'Arthur', 'Rafaela', 'Rogério'] as const;
+/** Os 3 do começo: desafios criados antes do Rogério entrar valem só entre eles. */
+export const FOUNDERS: Player[] = ['Paulo', 'Arthur', 'Rafaela'];
 export type Player = (typeof PLAYERS)[number];
 
 export const START = '2026-10-19';
 export const END = '2026-12-20';
-export const PRIZE = 'R$ 300';
+export const PRIZE = 'R$ 400';
 export const JOKERS = 2;
 export const DEFAULT_WATER_GOAL_ML = 3000;
 /**
@@ -17,7 +19,7 @@ export const MIN_MEAL_PHOTOS = 2;
 // Paulo ainda vai decidir se os bônus ficam. Desligar aqui zera os bônus no placar.
 export const BONUS_ENABLED = true;
 
-export const INITIAL_WEIGHTS: Record<Player, number> = { Paulo: 94.4, Arthur: 84.1, Rafaela: 84.4 };
+export const INITIAL_WEIGHTS: Record<Player, number> = { Paulo: 94.4, Arthur: 84.1, Rafaela: 84.4, Rogério: 85 };
 
 /** Itens marcados à mão no checklist (água e treino vêm dos próprios registros). */
 export type CheckKey = 'comida' | 'doce' | 'inj' | 'coringa' | 'cardio' | 'proteina' | 'passos';
@@ -75,7 +77,7 @@ export const fmtHours = (h: number) => {
   return `${Math.floor(total / 60)}h${m ? String(m).padStart(2, '0') : ''}`;
 };
 
-/** 1ª dose, aplicada pelos 3 juntos antes do início; entra no registro de cada um. */
+/** 1ª dose, aplicada por Paulo, Arthur e Rafaela antes do início; entra no registro deles. */
 export const FIRST_DOSE: Injection = { date: '2026-10-16', ml: 2.5, note: '1ª dose' };
 
 export const INJECTION_SITES = ['Abdômen', 'Coxa esq.', 'Coxa dir.', 'Braço esq.', 'Braço dir.'];
@@ -163,8 +165,13 @@ export function stats(days: Record<string, DayRecord>, today: string, player: Pl
 export const num = (n: number, digits = 1) =>
   (Number.isInteger(n) ? String(n) : n.toFixed(digits)).replace('.', ',');
 
-/** Liga o nome do perfil a um dos 3 jogadores (sem acento, só o primeiro nome). */
+/** Liga o nome do perfil a um dos jogadores (sem acento, só o primeiro nome). */
 export function playerFromName(name?: string | null): Player | null {
   const first = (name || '').trim().split(/\s+/)[0]?.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  return PLAYERS.find((p) => p.toLowerCase() === first) ?? null;
+  return PLAYERS.find((p) => slug(p) === first) ?? null;
+}
+
+/** "Rogério" → "rogerio" (sem acento, minúsculo): usado no e-mail interno da conta. */
+export function slug(name: string) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }

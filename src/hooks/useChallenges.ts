@@ -5,7 +5,7 @@ import { createChallenge, deleteChallenge, getChallenge, IS_DEMO, loadChallenges
 import { allIn, type Challenge, type Metric } from '@/lib/desafio/challenges';
 import { PLAYERS, type Player } from '@/lib/desafio/rules';
 
-// Desafios entre os 3, no banco: cada um aceita ou recusa do próprio celular.
+// Desafios do grupo, no banco: cada um aceita ou recusa do próprio celular.
 // Sem banco (ou na demonstração) ficam no aparelho; na demonstração, Arthur e
 // Rafaela aceitam sozinhos.
 export function useChallenges(me: Player | null) {
@@ -66,6 +66,7 @@ export function useChallenges(me: Player | null) {
         start,
         createdBy: me,
         accepted: [me],
+        players: [...PLAYERS],
         createdAt: new Date().toISOString(),
       };
       if (!IS_DEMO && !(await createChallenge(c))) {
@@ -74,7 +75,7 @@ export function useChallenges(me: Player | null) {
       }
       saveLocal([c, ...localDesafio.getChallenges()]);
       if (IS_DEMO) {
-        // simulação: os outros dois aceitam em seguida
+        // simulação: os outros aceitam em seguida
         PLAYERS.filter((p) => p !== me).forEach((p, i) =>
           setTimeout(async () => {
             const after = await update(c.id, (x) => (x.declinedBy || x.accepted.includes(p) ? x : { ...x, accepted: [...x.accepted, p] }));
@@ -102,7 +103,7 @@ export function useChallenges(me: Player | null) {
   const decline = useCallback(
     async (id: string) => {
       if (!me) return;
-      if (await update(id, (c) => ({ ...c, declinedBy: c.declinedBy ?? me }))) toast('Desafio recusado e cancelado para os 3');
+      if (await update(id, (c) => ({ ...c, declinedBy: c.declinedBy ?? me }))) toast('Desafio recusado e cancelado para todos');
     },
     [me, update],
   );

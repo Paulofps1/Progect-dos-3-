@@ -11,13 +11,13 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-/** "Quem é você no desafio?" — aparece só se o nome do perfil não bater com um dos 3. */
+/** "Quem é você no desafio?" — aparece só se o nome do perfil não bater com um dos participantes. */
 export function PlayerPicker({ onPick }: { onPick: (p: Player) => void }) {
   return (
     <div className="rounded-3xl border border-border bg-card p-4">
       <p className="text-sm font-semibold text-foreground">Quem é você no desafio?</p>
       <p className="text-[11px] text-muted-foreground">Escolha uma vez; fica salvo neste aparelho.</p>
-      <div className="grid grid-cols-3 gap-2 mt-3">
+      <div className="grid grid-cols-2 gap-2 mt-3">
         {PLAYERS.map((p) => (
           <button key={p} onClick={() => onPick(p)} className="rounded-xl border border-border py-3 text-sm font-medium text-foreground hover:bg-secondary">
             {p}

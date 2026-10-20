@@ -1,7 +1,7 @@
-// Mini-desafios entre os 3. Regra principal: só começa quando OS TRÊS aceitam;
+// Mini-desafios do grupo. Regra principal: só começa quando TODOS os participantes aceitam;
 // se alguém recusa, o desafio é cancelado. Funções puras, sem React.
 
-import { PLAYERS, daysBetween, habitDone, isPerfect, parseYmd, ymd, type DayRecord, type Player } from './rules';
+import { FOUNDERS, daysBetween, habitDone, isPerfect, parseYmd, ymd, type DayRecord, type Player } from './rules';
 
 export type Metric = 'doce' | 'agua' | 'treino' | 'perfeito' | 'passos' | 'cardio';
 
@@ -24,6 +24,8 @@ export type Challenge = {
   start: string; // YYYY-MM-DD
   createdBy: Player;
   accepted: Player[];
+  /** Quem participa (todos na hora da criação). Sem o campo: desafio antigo, dos 3 do começo. */
+  players?: Player[];
   declinedBy?: Player;
   createdAt: string;
 };
@@ -38,13 +40,14 @@ export const endOf = (c: Challenge) => {
   return ymd(d);
 };
 
-export const allIn = (c: Challenge) => PLAYERS.every((p) => c.accepted.includes(p));
+export const playersOf = (c: Challenge): Player[] => c.players ?? FOUNDERS;
+export const allIn = (c: Challenge) => playersOf(c).every((p) => c.accepted.includes(p));
 
 /** Situação do desafio do ponto de vista de quem está olhando. */
 export function statusOf(c: Challenge, me: Player | null, today: string): Status {
   if (c.declinedBy) return 'cancelado';
   if (!allIn(c)) {
-    // começou o prazo e ninguém fechou os 3: não vale
+    // terminou o prazo e não fechou com todos: não vale
     if (today > endOf(c)) return 'cancelado';
     return me && !c.accepted.includes(me) ? 'convite' : 'aguardando';
   }
@@ -82,7 +85,7 @@ export type Score = { player: Player; value: number | null; place: number };
  */
 export function scores(c: Challenge, today: string, recordOf: (p: Player, date: string) => DayRecord | null | undefined): Score[] {
   const days = elapsedDays(c, today);
-  const raw = PLAYERS.map((player) => {
+  const raw = playersOf(c).map((player) => {
     const recs = days.map((d) => recordOf(player, d));
     const known = recs.some((r) => r !== null);
     return { player, value: known ? recs.filter((r) => r && METRIC_DONE[c.metric](r)).length : null };
@@ -119,12 +122,12 @@ export function fakeRecord(player: Player, date: string, waterGoalMl = 3000): Da
 
 /**
  * Pontos dos desafios do grupo para o placar principal: enquanto um desafio está
- * valendo (os 3 aceitaram), cada dia cumprido vale +1. Não cumpriu, não ganha.
+ * valendo (todos aceitaram), cada dia cumprido vale +1. Não cumpriu, não ganha.
  */
 export function challengePoints(list: Challenge[], player: Player, recordOf: (date: string) => DayRecord | undefined, today: string) {
   let pts = 0;
   for (const c of list) {
-    if (c.declinedBy || !allIn(c) || today < c.start) continue;
+    if (c.declinedBy || !allIn(c) || today < c.start || !playersOf(c).includes(player)) continue;
     for (const d of elapsedDays(c, today)) if (METRIC_DONE[c.metric](recordOf(d))) pts++;
   }
   return pts;

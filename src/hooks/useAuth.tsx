@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { slug } from '@/lib/desafio/rules';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
@@ -93,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // do app, não da pessoa). Na 1ª vez a conta é criada. Escolha do grupo: qualquer um
   // pode entrar como qualquer um.
   const enterAs = async (player: string) => {
-    const email = `${player.toLowerCase()}@${PLAYER_EMAIL_DOMAIN}`;
+    const email = `${slug(player)}@${PLAYER_EMAIL_DOMAIN}`;
     const first = await supabase.auth.signInWithPassword({ email, password: PLAYER_PASSWORD });
     if (!first.error) return { error: null };
     if (!/invalid login/i.test(first.error.message)) return { error: first.error };

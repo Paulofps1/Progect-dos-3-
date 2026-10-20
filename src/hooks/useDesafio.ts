@@ -9,6 +9,8 @@ import { IS_DEMO, loadMine, saveMine, type Kind } from '@/lib/desafio/remote';
 import {
   DEFAULT_WATER_GOAL_ML,
   FIRST_DOSE,
+  FOUNDERS,
+  slug,
   JOKERS,
   PLAYERS,
   playerFromName,
@@ -36,10 +38,11 @@ function lastLoginPlayer(): Player | null {
 
 // Junta, por dia, água e treino (tabelas do app) com o checklist do desafio.
 // Checklist, pesagens e injeções ficam no banco (desafio_dados) com cópia no
-// aparelho; o resumo dos dias também vai para o banco, para o Placar dos 3.
+// aparelho; o resumo dos dias também vai para o banco, para o Placar de todos.
 export function useDesafio() {
   const { user, profile } = useAuth();
   const userId = user?.id;
+  const email = user?.email;
   const today = todayStr();
 
   // começa com o que já está no aparelho (inclusive água/treino da última vez):
@@ -93,10 +96,11 @@ export function useDesafio() {
       sync('profile', localDesafio.getProfile(userId), (v) => !Object.keys(v).length, (v) => setProfileData(v), (v) => localDesafio.setProfile(userId, v));
       sync('next_injection', localDesafio.getNextInjection(userId), (v) => !v, (v) => setNextInj(v), (v) => localDesafio.setNextInjection(userId, v));
     }
-    // 1ª dose dos 3 (16/10): registra uma vez só; se a pessoa apagar, não volta
+    // 1ª dose de Paulo, Arthur e Rafaela (16/10): registra uma vez só; se apagar, não volta
     const seedKey = `desafio:${userId}:1a-dose`;
+    const founder = IS_DEMO || FOUNDERS.some((p) => email?.startsWith(`${slug(p)}@`));
     // (só depois de ler o banco, para não sobrescrever o que já está lá)
-    if ((mine || IS_DEMO) && !localStorage.getItem(seedKey)) {
+    if ((mine || IS_DEMO) && founder && !localStorage.getItem(seedKey)) {
       const list = localDesafio.getInjections(userId);
       if (!list.some((i) => i.date === FIRST_DOSE.date)) {
         const next = [...list, FIRST_DOSE].sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -125,7 +129,7 @@ export function useDesafio() {
     setMealPhotos(meals);
     if (!w.error && !s.error && !m.error) localDesafio.setDbCache(userId, { water: byDay, trained: trainedDays, meals });
     setLoading(false);
-  }, [userId]);
+  }, [userId, email]);
 
   useEffect(() => {
     load();
@@ -326,7 +330,7 @@ export function useDesafio() {
     [userId],
   );
 
-  // resumo dos dias no banco: é o que os outros dois enxergam no Placar e nos Desafios
+  // resumo dos dias no banco: é o que os outros enxergam no Placar e nos Desafios
   const sentDays = useRef('');
   useEffect(() => {
     if (!userId || !player || loading) return;

@@ -219,7 +219,7 @@ const Profile = () => {
             transition={{ delay: 0.4 }}
             className="text-center text-muted-foreground text-xs pt-2 pb-4"
           >
-            Desafio dos 3 · 19/10 a 20/12
+            Desafio dos 4 · 19/10 a 20/12
           </motion.p>
         </div>
 

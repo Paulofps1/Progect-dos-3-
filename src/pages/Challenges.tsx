@@ -25,15 +25,17 @@ import {
   type Challenge,
   type Metric,
   type Status,
+  playersOf,
 } from '@/lib/desafio/challenges';
 import { PLAYERS, ymd, type Player } from '@/lib/desafio/rules';
 
-// Desafios entre os 3: alguém propõe, os outros dois aceitam, e só então vale.
+// Desafios do grupo: alguém propõe, os outros aceitam, e só então vale.
 // O placar sai do que cada um marca no dia a dia (Hoje).
 
 const IS_DEMO = import.meta.env.MODE === 'demo';
 const MEDALS = ['🥇', '🥈', '🥉'];
-const PLAYER_COLOR: Record<Player, string> = { Paulo: 'bg-emerald-500', Arthur: 'bg-sky-500', Rafaela: 'bg-rose-500' };
+const joinNames = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}` : xs.join(''));
+const PLAYER_COLOR: Record<Player, string> = { Paulo: 'bg-emerald-500', Arthur: 'bg-sky-500', Rafaela: 'bg-rose-500', Rogério: 'bg-amber-500' };
 const PERFECT_TONE: Tone = { ...TONES.comida, icon: CalendarCheck, label: 'Dias perfeitos', bg: 'bg-primary/15', fg: 'text-primary', bar: 'bg-primary' };
 const toneOf = (m: Metric): Tone => (m === 'perfeito' ? PERFECT_TONE : TONES[m]);
 const shortDay = (d: string) => format(parseISO(d), 'dd/MM');
@@ -70,7 +72,7 @@ const Challenges = () => {
   return (
     <AppLayout activeNav="home">
       <motion.div initial={false} animate={{ opacity: 1 }} className="min-h-screen pb-28 lg:pb-8">
-        <SectionHeader title="Desafios" subtitle="Mini-desafios entre os 3" backTo="/dashboard" icon={<Swords className="w-5 h-5 text-primary" />} />
+        <SectionHeader title="Desafios" subtitle="Mini-desafios do grupo" backTo="/dashboard" icon={<Swords className="w-5 h-5 text-primary" />} />
 
         <div className="px-4 sm:px-6 lg:px-8 space-y-5 mt-6 max-w-2xl mx-auto">
           {!me && !d.loading && <PlayerPicker onPick={d.choosePlayer} />}
@@ -100,7 +102,7 @@ const Challenges = () => {
               {invites.map(({ c }) => (
                 <ChallengeCard key={c.id} c={c} status="convite" today={d.today}>
                   <p className="text-sm text-foreground mt-3">
-                    <b>{c.createdBy}</b> desafiou vocês. Só começa quando os 3 aceitarem.
+                    <b>{c.createdBy}</b> desafiou vocês. Só começa quando todos aceitarem.
                   </p>
                   <AcceptRow c={c} />
                   <div className="grid grid-cols-2 gap-2 mt-3">
@@ -252,7 +254,7 @@ function ChallengeCard({ c, status, today, children }: { c: Challenge; status: S
 function AcceptRow({ c }: { c: Challenge }) {
   return (
     <div className="flex flex-wrap gap-2 mt-3">
-      {PLAYERS.map((p) => {
+      {playersOf(c).map((p) => {
         const ok = c.accepted.includes(p);
         return (
           <span key={p} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${ok ? 'bg-primary/15 text-foreground' : 'bg-secondary text-muted-foreground'}`}>
@@ -337,7 +339,7 @@ function NewChallenge({ me, today, onClose, onCreate }: { me: Player; today: str
       >
         <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-foreground text-center">Novo desafio</h3>
-        <p className="text-xs text-muted-foreground text-center mt-1">Vai como convite para {others.join(' e ')}</p>
+        <p className="text-xs text-muted-foreground text-center mt-1">Vai como convite para {joinNames(others)}</p>
 
         <p className="text-xs font-medium text-muted-foreground mt-5 mb-2">Qual?</p>
         <div className="grid grid-cols-2 gap-2">
@@ -389,9 +391,9 @@ function NewChallenge({ me, today, onClose, onCreate }: { me: Player; today: str
           }}
           className="w-full h-12 rounded-2xl font-semibold mt-6"
         >
-          <Swords className="w-5 h-5 mr-2" /> Desafiar {others.join(' e ')}
+          <Swords className="w-5 h-5 mr-2" /> Desafiar {joinNames(others)}
         </Button>
-        <p className="text-[11px] text-muted-foreground text-center mt-2">Só começa a contar quando os 3 aceitarem.</p>
+        <p className="text-[11px] text-muted-foreground text-center mt-2">Só começa a contar quando todos aceitarem.</p>
       </motion.div>
     </motion.div>
   );
