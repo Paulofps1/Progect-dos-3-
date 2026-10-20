@@ -7,6 +7,7 @@ import { ProofSheet } from './ProofSheet';
 import type { ProofKind } from '@/lib/desafio/proofs';
 import {
   bonusOf,
+  BONUS_V2,
   BONUS_ENABLED,
   CORE,
   MIN_MEAL_PHOTOS,
@@ -149,9 +150,9 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
 
       {/* bônus */}
       <p className="relative text-[11px] font-medium text-muted-foreground mt-4 mb-2">
-        {!BONUS_ENABLED ? 'Extras' : v2 ? 'Bônus · +1 em dia perfeito' : 'Bônus · exercício extra · +0,5 cada em dia perfeito'}
+        {!BONUS_ENABLED ? 'Extras' : record.date >= BONUS_V2 ? 'Bônus · +1 em dia perfeito' : 'Bônus · exercício extra · +0,5 cada em dia perfeito'}
       </p>
-      <div className={`relative grid gap-2 ${v2 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+      <div className={`relative grid gap-2 ${record.date >= BONUS_V2 ? 'grid-cols-1' : 'grid-cols-2'}`}>
         {bonusOf(record.date).map((k) => {
           const t = TONES[k];
           const on = habitDone(k, record);

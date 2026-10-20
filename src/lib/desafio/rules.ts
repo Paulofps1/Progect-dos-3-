@@ -36,9 +36,11 @@ export const HABITS: { key: HabitKey; label: string; emoji: string; auto?: boole
   { key: 'passos', label: 'Caminhada 4 km+', emoji: '🚶' },
 ];
 export const CORE: HabitKey[] = ['agua', 'treino', 'comida', 'doce'];
-// bônus até 20/10: cardio e passos (+0,5 cada); a partir de 21/10: só caminhada 4 km+ (+1)
+// bônus até 19/10: cardio e passos (+0,5 cada); a partir de 20/10: só caminhada 4 km+ (+1).
+// O print da caminhada é exigido a partir de RULES_V2 (21/10).
+export const BONUS_V2 = '2026-10-20';
 export const BONUS: HabitKey[] = ['cardio', 'passos'];
-export const bonusOf = (date: string): HabitKey[] => (date >= RULES_V2 ? ['passos'] : BONUS);
+export const bonusOf = (date: string): HabitKey[] => (date >= BONUS_V2 ? ['passos'] : BONUS);
 /** Caminhada precisa de print (a partir de RULES_V2); treino é só marcar. */
 export const needsProof = (k: HabitKey, date: string) => date >= RULES_V2 && k === 'passos';
 
@@ -140,7 +142,7 @@ export const dayPoints = (r?: DayRecord) => {
   if (!isPerfect(r)) return 0;
   const bonus = !BONUS_ENABLED
     ? 0
-    : r!.date >= RULES_V2
+    : r!.date >= BONUS_V2
       ? habitDone('passos', r) ? 1 : 0
       : Math.min(1, 0.5 * BONUS.filter((k) => habitDone(k, r)).length);
   return 1 + bonus;
