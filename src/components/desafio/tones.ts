@@ -10,7 +10,7 @@ export const TONES: Record<HabitKey, Tone> = {
   doce: { icon: CandyOff, label: 'Zero doce', bg: 'bg-rose-500/15', fg: 'text-rose-500', bar: 'bg-rose-500' },
   cardio: { icon: HeartPulse, label: 'Cardio', bg: 'bg-orange-500/15', fg: 'text-orange-500', bar: 'bg-orange-500' },
   proteina: { icon: Beef, label: 'Proteína', bg: 'bg-red-500/15', fg: 'text-red-500', bar: 'bg-red-500' },
-  passos: { icon: Footprints, label: 'Passos', bg: 'bg-teal-500/15', fg: 'text-teal-600', bar: 'bg-teal-500' },
+  passos: { icon: Footprints, label: 'Caminhada 4 km', bg: 'bg-teal-500/15', fg: 'text-teal-600', bar: 'bg-teal-500' },
   inj: { icon: Syringe, label: 'Injeção', bg: 'bg-indigo-500/15', fg: 'text-indigo-500', bar: 'bg-indigo-500' },
   coringa: { icon: Ticket, label: 'Coringa', bg: 'bg-amber-500/15', fg: 'text-amber-600', bar: 'bg-amber-500' },
 };

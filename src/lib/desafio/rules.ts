@@ -32,7 +32,7 @@ export const HABITS: { key: HabitKey; label: string; emoji: string; auto?: boole
   { key: 'doce', label: 'Zero doce', emoji: '🚫' },
   { key: 'coringa', label: 'Coringa', emoji: '🃏' },
   { key: 'cardio', label: 'Cardio', emoji: '🏃' },
-  { key: 'passos', label: 'Passos', emoji: '🚶' },
+  { key: 'passos', label: 'Caminhada 4 km', emoji: '🚶' },
 ];
 export const CORE: HabitKey[] = ['agua', 'treino', 'comida', 'doce'];
 // exercício extra além do treino (proteína saiu; injeção não vale ponto)

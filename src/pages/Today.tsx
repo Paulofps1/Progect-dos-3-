@@ -202,7 +202,7 @@ const Today = () => {
           />
 
           {/* ── Metric Cards (3 cols) ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {/* Sono da última noite */}
             <motion.button
               initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
@@ -225,69 +225,7 @@ const Today = () => {
               <p className="text-[10px] text-muted-foreground mt-0.5">pontos · 🔥 {desafio.myStats?.run ?? 0} seguidos</p>
             </motion.button>
 
-            {/* Água */}
-            <motion.div
-              initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-              className="rounded-2xl bg-card border border-border p-4"
-            >
-              <Droplets className="w-4 h-4 text-info mb-2" />
-              <p className="text-lg font-bold text-foreground leading-none">{dayData.water}<span className="text-[10px] font-normal">ml</span></p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">/ {dayData.waterTarget}ml</p>
-              <div className="w-full h-1 bg-secondary rounded-full mt-2 overflow-hidden">
-                <motion.div initial={false} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8 }}
-                  className="h-full rounded-full bg-info" />
-              </div>
-            </motion.div>
           </div>
-
-          {/* ── Quick Actions + Features ── */}
-          <motion.div
-            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-          >
-            <div className="flex flex-wrap gap-3">
-              {[
-                { icon: Utensils, label: 'Refeição', route: '/meals', color: 'text-primary', bg: 'bg-primary/10' },
-                { icon: Droplets, label: 'Água', route: '/water', color: 'text-info', bg: 'bg-info/10' },
-                { icon: Syringe, label: 'Injeção', route: '/injecao', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                { icon: BarChart3, label: 'Resumo', route: '/progress', color: 'text-info', bg: 'bg-info/10' },
-                { icon: Swords, label: 'Desafios', route: '/challenges', color: 'text-violet-500', bg: 'bg-violet-500/10' },
-                { icon: Trophy, label: 'Placar', route: '/achievements', color: 'text-warning', bg: 'bg-warning/10' },
-                { icon: Dumbbell, label: 'Treinos', route: '/workouts', color: 'text-detail', bg: 'bg-detail/10' },
-              ].map(item => (
-                <motion.button
-                  key={item.route}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate(item.route)}
-                  className="flex-1 min-w-[72px] rounded-2xl bg-card border border-border p-3 flex flex-col items-center gap-1.5 hover:bg-accent/50 transition-colors"
-                >
-                  <div className={`w-9 h-9 rounded-xl ${item.bg} flex items-center justify-center`}>
-                    <item.icon className={`w-4.5 h-4.5 ${item.color}`} />
-                  </div>
-                  <span className="text-[10px] font-medium text-foreground whitespace-nowrap">{item.label}</span>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ── Next Meal ── */}
-          <motion.button
-            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/meals')}
-            className="w-full rounded-2xl bg-card border border-border p-4 text-left flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{nextMeal.emoji}</span>
-              <div>
-                <p className="text-xs text-muted-foreground">Próxima refeição</p>
-                <p className="text-sm font-semibold text-foreground">{nextMeal.type}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-primary">
-              <span className="text-xs font-medium">Registrar</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-          </motion.button>
 
           {/* ── Water Quick Add ── */}
           <motion.div
@@ -320,8 +258,13 @@ const Today = () => {
             className="rounded-2xl bg-card border border-border p-4 motion-card"
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-foreground">Registros de hoje</p>
-              <span className="text-[11px] text-muted-foreground">{meals.length} itens</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Refeições de hoje</p>
+                <p className="text-[11px] text-muted-foreground">{desafio.record(today).mealPhotos ?? 0} de 2 com foto · próxima: {nextMeal.type}</p>
+              </div>
+              <Button size="sm" onClick={() => navigate('/meals')} className="rounded-xl h-9">
+                <Camera className="w-4 h-4 mr-1" /> Registrar
+              </Button>
             </div>
 
             {meals.length > 0 ? (
@@ -336,30 +279,13 @@ const Today = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-5">
                 <Utensils className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Nenhuma refeição registrada</p>
-                <p className="text-[11px] text-muted-foreground mt-1">Use o botão + para começar</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Tire a foto do prato: 2 por dia fecham o dia</p>
               </div>
             )}
           </motion.div>
-
-          {/* ── Workout CTA ── */}
-          <motion.button
-            initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/workouts')}
-            className="w-full rounded-2xl bg-detail/10 border border-detail/20 p-4 flex items-center gap-3"
-          >
-            <div className="w-9 h-9 rounded-full bg-detail/20 flex items-center justify-center flex-shrink-0">
-              <Dumbbell className="w-4 h-4 text-detail" />
-            </div>
-            <div className="text-left flex-1">
-              <p className="text-sm font-semibold text-foreground">Treinar hoje</p>
-              <p className="text-[11px] text-muted-foreground">Marque se treinou hoje</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </motion.button>
 
         </div>
 

@@ -12,7 +12,7 @@ export const TEMPLATES: Template[] = [
   { id: 'agua', title: 'Rei da água', desc: 'Quem bate a meta de água mais dias', unit: 'dias na meta' },
   { id: 'treino', title: 'Rato de academia', desc: 'Quem treina mais dias', unit: 'treinos' },
   { id: 'perfeito', title: 'Dias perfeitos', desc: 'Quem fecha mais dias perfeitos', unit: 'dias perfeitos' },
-  { id: 'passos', title: 'Bora caminhar', desc: 'Quem bate a meta de passos mais dias', unit: 'dias de passos' },
+  { id: 'passos', title: 'Bora caminhar', desc: 'Quem caminha 4 km mais dias', unit: 'dias de 4 km' },
   { id: 'cardio', title: 'Cardio todo dia', desc: 'Quem faz cardio mais dias', unit: 'dias de cardio' },
 ];
 export const DURATIONS = [3, 7, 14];
