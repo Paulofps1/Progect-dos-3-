@@ -52,7 +52,11 @@ const cachedPhotos = (list: Meal[]) => Object.fromEntries(list.filter((m) => pho
 const Meals = () => {
   const { user } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
-  const [date, setDate] = useState(today);
+  // ?dia=AAAA-MM-DD abre direto naquele dia (vindo do Resumo)
+  const [date, setDate] = useState(() => {
+    const dia = new URLSearchParams(location.search || location.hash.split('?')[1] || '').get('dia');
+    return dia && /^\d{4}-\d{2}-\d{2}$/.test(dia) && dia <= today ? dia : today;
+  });
   const cached = lastSeen?.date === today ? lastSeen : null;
   const [loading, setLoading] = useState(!cached);
   const [meals, setMeals] = useState<Meal[]>(cached?.meals ?? []);

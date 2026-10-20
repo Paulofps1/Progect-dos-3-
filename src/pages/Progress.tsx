@@ -192,7 +192,7 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
     if (!editable) return;
     const on = habitDone(k, record);
     if (k === 'agua') return on ? toast('Água de um dia que passou só dá para completar, não tirar') : d.fillWater(record.date);
-    if (k === 'comida' && record.date >= RULES_V2) return navigate('/meals'); // automático: fotos dos pratos
+    if (k === 'comida' && record.date >= RULES_V2) return navigate(`/meals?dia=${record.date}`); // automático: fotos dos pratos
     if (needsProof(k, record.date) && !record.cardio) return setProof(k as ProofKind);
     d.toggle(record.date, k);
   };
