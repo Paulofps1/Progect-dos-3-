@@ -81,8 +81,8 @@ const Challenges = () => {
             <div className="relative flex items-center gap-4">
               <Avatars players={[...PLAYERS]} />
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">Só vale com os 3</p>
-                <p className="text-xs text-muted-foreground">Um propõe, os outros dois aceitam. Se alguém recusar, o desafio é cancelado.</p>
+                <p className="text-sm font-semibold text-foreground">Só vale com todos · +1 ponto por dia</p>
+                <p className="text-xs text-muted-foreground">Um propõe, os outros aceitam. Valendo, cada dia cumprido dá +1 no Placar. Se alguém recusar, é cancelado.</p>
               </div>
             </div>
             <Button onClick={() => setCreating(true)} disabled={!me} className="relative w-full h-12 rounded-2xl font-semibold mt-4">

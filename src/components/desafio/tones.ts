@@ -6,7 +6,7 @@ export type Tone = { icon: LucideIcon; label: string; bg: string; fg: string; ba
 export const TONES: Record<HabitKey, Tone> = {
   agua: { icon: Droplets, label: 'Água', bg: 'bg-sky-500/15', fg: 'text-sky-500', bar: 'bg-sky-500' },
   treino: { icon: Dumbbell, label: 'Treinou', bg: 'bg-violet-500/15', fg: 'text-violet-500', bar: 'bg-violet-500' },
-  comida: { icon: Salad, label: 'Comeu direito', bg: 'bg-emerald-500/15', fg: 'text-emerald-600', bar: 'bg-emerald-500' },
+  comida: { icon: Salad, label: 'Pratos com foto', bg: 'bg-emerald-500/15', fg: 'text-emerald-600', bar: 'bg-emerald-500' },
   doce: { icon: CandyOff, label: 'Zero doce', bg: 'bg-rose-500/15', fg: 'text-rose-500', bar: 'bg-rose-500' },
   cardio: { icon: HeartPulse, label: 'Cardio', bg: 'bg-orange-500/15', fg: 'text-orange-500', bar: 'bg-orange-500' },
   proteina: { icon: Beef, label: 'Proteína', bg: 'bg-red-500/15', fg: 'text-red-500', bar: 'bg-red-500' },

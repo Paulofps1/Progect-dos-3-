@@ -9,7 +9,7 @@ import type { DayRecord, Player } from './rules';
 
 export const IS_DEMO = import.meta.env.MODE === 'demo';
 
-export type Kind = 'checks' | 'weights' | 'injections' | 'next_injection' | 'days' | 'sleep';
+export type Kind = 'checks' | 'weights' | 'injections' | 'next_injection' | 'days' | 'sleep' | 'profile';
 type Row = { user_id: string; tipo: Kind; jogador: Player | null; valor: unknown };
 
 // as tabelas novas ainda não estão nos tipos gerados do Supabase
@@ -32,19 +32,20 @@ export async function saveMine(userId: string, player: Player | null, tipo: Kind
   return !error;
 }
 
-export type Shared = { days: Record<string, DayRecord>; weights: { date: string; kg: number }[] };
+export type Shared = { userId: string; days: Record<string, DayRecord>; weights: { date: string; kg: number }[] };
 
 /** Dias e pesagens dos 3 (o que o banco deixa cada um ver dos outros). */
 export async function loadEveryone(): Promise<Partial<Record<Player, Shared>> | null> {
   if (IS_DEMO) return null;
-  const { data, error } = await db.from('desafio_dados').select('jogador, tipo, valor, atualizado_em').in('tipo', ['days', 'weights']);
+  const { data, error } = await db.from('desafio_dados').select('user_id, jogador, tipo, valor, atualizado_em').in('tipo', ['days', 'weights']);
   if (error) return null;
   const out: Partial<Record<Player, Shared>> = {};
   // se alguém trocou de conta, vale o registro mais recente de cada jogador
   const rows = [...(data as (Row & { atualizado_em: string })[])].sort((a, b) => (a.atualizado_em < b.atualizado_em ? -1 : 1));
   for (const r of rows) {
     if (!r.jogador) continue;
-    const cur = (out[r.jogador] ??= { days: {}, weights: [] });
+    const cur = (out[r.jogador] ??= { userId: r.user_id, days: {}, weights: [] });
+    cur.userId = r.user_id;
     if (r.tipo === 'days') cur.days = (r.valor as Shared['days']) || {};
     else cur.weights = (r.valor as Shared['weights']) || [];
   }

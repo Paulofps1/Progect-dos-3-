@@ -17,7 +17,7 @@ import { CORE, START, dayPercent, dayPoints, fmtHours, habitDone, isPerfect, isS
 
 type MealRow = { id: string; date: string; name: string; time: string | null };
 type Filter = 'todos' | 'perfeitos' | 'abertos';
-const SHOWN: HabitKey[] = ['agua', 'treino', 'comida', 'doce', 'cardio', 'proteina', 'passos', 'inj'];
+const SHOWN: HabitKey[] = ['agua', 'treino', 'comida', 'doce', 'cardio', 'passos'];
 
 const History = () => {
   const { user, loading: authLoading } = useAuth();

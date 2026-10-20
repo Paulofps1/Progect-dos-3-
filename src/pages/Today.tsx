@@ -199,7 +199,7 @@ const Today = () => {
           <DayChecklist
             record={desafio.record(today)}
             toggle={desafio.toggle}
-            lastInjection={desafio.injections.find((i) => i.date <= desafio.today)?.date}
+            markWithProof={desafio.markWithProof}
             jokersLeft={jokersLeftOf(Object.values(desafio.days).filter((r) => r.coringa).length)}
           />
 

@@ -13,7 +13,8 @@ import { shrinkPhoto } from '@/lib/desafio/localStore';
 import { getMealPhotos, removeMealPhotos, retryPendingPhotos, saveMealPhotos } from '@/lib/desafio/mealCloud';
 
 // Refeições: diário de fotos do que comeu, com uma anotação opcional.
-// Não conta calorias (a contagem não ajudava). Fotos ficam privadas.
+// Não conta calorias. Cada refeição precisa de foto; 2 por dia fecham o
+// "Pratos com foto" do desafio (meal_items guarda quantas fotos tem). Fotos são privadas.
 
 interface Meal {
   id: string;
@@ -119,7 +120,7 @@ const Meals = () => {
 
   const handleSave = async () => {
     if (!user) return;
-    if (!draftPhotos.length && !note.trim()) return toast.error('Coloque uma foto ou escreva o que comeu');
+    if (!draftPhotos.length) return toast.error('Coloque a foto do prato');
     setSaving(true);
     const t = typeOf(mealType)!;
     const { data, error } = await supabase
@@ -130,7 +131,7 @@ const Meals = () => {
         meal_type: mealType,
         date,
         time: date === today ? format(new Date(), 'HH:mm') : t.time,
-        meal_items: [],
+        meal_items: [{ fotos: draftPhotos.length }],
       })
       .select('id')
       .single();
@@ -265,7 +266,7 @@ const Meals = () => {
               })}
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground mt-4 text-center">Só registro, não entra na pontuação. Só você vê suas fotos.</p>
+          <p className="text-[11px] text-muted-foreground mt-4 text-center">No mínimo 2 refeições com foto por dia para fechar o dia. Só você vê suas fotos.</p>
         </div>
 
         {/* Registrar (portal: fica por cima do menu de baixo) */}

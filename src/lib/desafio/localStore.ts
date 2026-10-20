@@ -4,7 +4,10 @@
 import type { CheckKey, Injection, Player, Sleep, Weight } from './rules';
 import type { Challenge } from './challenges';
 
-type Checks = Record<string, Partial<Record<CheckKey, boolean>>>; // por data
+// por data; prova* = já mandou a foto de prova do treino/cardio
+type Checks = Record<string, Partial<Record<CheckKey | 'provaTreino' | 'provaCardio', boolean>>>;
+
+export type ProfileData = { heightCm?: number; goalKg?: number; waterGoalMl?: number; avatar?: string };
 
 const k = (userId: string, what: string) => `desafio:${userId}:${what}`;
 
@@ -42,9 +45,13 @@ export const localDesafio = {
   getPlayer: (userId: string) => read<Player | null>(k(userId, 'player'), null),
   setPlayer: (userId: string, p: Player) => write(k(userId, 'player'), p),
   /** Última água/treino lidos do banco, só para a tela abrir já preenchida. */
-  getDbCache: (userId: string) => read<{ water: Record<string, number>; trained: string[] }>(k(userId, 'cache-banco'), { water: {}, trained: [] }),
+  getDbCache: (userId: string) =>
+    read<{ water: Record<string, number>; trained: string[]; meals?: Record<string, number> }>(k(userId, 'cache-banco'), { water: {}, trained: [] }),
   hasDbCache: (userId: string) => localStorage.getItem(k(userId, 'cache-banco')) !== null,
-  setDbCache: (userId: string, v: { water: Record<string, number>; trained: string[] }) => write(k(userId, 'cache-banco'), v),
+  setDbCache: (userId: string, v: { water: Record<string, number>; trained: string[]; meals: Record<string, number> }) => write(k(userId, 'cache-banco'), v),
+  /** Altura, meta de peso, meta de água e foto do perfil (também no banco, tipo 'profile'). */
+  getProfile: (userId: string) => read<ProfileData>(k(userId, 'perfil'), {}),
+  setProfile: (userId: string, v: ProfileData) => write(k(userId, 'perfil'), v),
   /** Tipos alterados aqui que ainda não chegaram ao banco (sem internet, por ex.). */
   getPending: (userId: string) => read<string[]>(k(userId, 'pendente'), []),
   setPending: (userId: string, kind: string, pending: boolean) => {

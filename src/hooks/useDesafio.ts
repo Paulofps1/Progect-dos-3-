@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { localDesafio } from '@/lib/desafio/localStore';
+import { localDesafio, type ProfileData } from '@/lib/desafio/localStore';
+import { challengePoints } from '@/lib/desafio/challenges';
+import { removeProof, uploadProof, type ProofKind } from '@/lib/desafio/proofs';
 import { IS_DEMO, loadMine, saveMine, type Kind } from '@/lib/desafio/remote';
 import {
   DEFAULT_WATER_GOAL_ML,
@@ -39,7 +41,6 @@ export function useDesafio() {
   const { user, profile } = useAuth();
   const userId = user?.id;
   const today = todayStr();
-  const waterGoalMl = profile?.water_goal_ml || DEFAULT_WATER_GOAL_ML;
 
   // começa com o que já está no aparelho (inclusive água/treino da última vez):
   // assim a tela não aparece vazia e depois enche (piscava ao trocar de página)
@@ -51,7 +52,11 @@ export function useDesafio() {
   const [nextInjection, setNextInj] = useState<string | null>(() => (userId ? localDesafio.getNextInjection(userId) : null));
   const [sleep, setSleep] = useState<Sleep[]>(() => (userId ? localDesafio.getSleep(userId) : []));
   const [chosen, setChosen] = useState<Player | null>(() => (userId ? localDesafio.getPlayer(userId) : null));
+  const [mealPhotos, setMealPhotos] = useState<Record<string, number>>(() => (userId ? localDesafio.getDbCache(userId).meals ?? {} : {}));
+  const [profileData, setProfileData] = useState<ProfileData>(() => (userId ? localDesafio.getProfile(userId) : {}));
   const [loading, setLoading] = useState(() => !userId || !localDesafio.hasDbCache(userId));
+  // meta de água: a do perfil do desafio (salva no banco) vale mais que a antiga do app
+  const waterGoalMl = profileData.waterGoalMl || profile?.water_goal_ml || DEFAULT_WATER_GOAL_ML;
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -61,10 +66,12 @@ export function useDesafio() {
     setNextInj(localDesafio.getNextInjection(userId));
     setChosen(localDesafio.getPlayer(userId));
     setSleep(localDesafio.getSleep(userId));
+    setProfileData(localDesafio.getProfile(userId));
     const since = format(subDays(new Date(), 120), 'yyyy-MM-dd');
-    const [w, s, mine] = await Promise.all([
+    const [w, s, m, mine] = await Promise.all([
       supabase.from('water_consumption').select('date, amount_ml').eq('user_id', userId).gte('date', since),
       supabase.from('workout_sessions').select('date').eq('user_id', userId).gte('date', since),
+      supabase.from('meals').select('date, meal_items').eq('user_id', userId).gte('date', since),
       loadMine(userId),
     ]);
     if (mine) {
@@ -83,6 +90,7 @@ export function useDesafio() {
       sync('weights', localDesafio.getWeights(userId), (v) => !v.length, (v) => setWeights(v), (v) => localDesafio.setWeights(userId, v));
       sync('injections', localDesafio.getInjections(userId), (v) => !v.length, (v) => setInjections(v), (v) => localDesafio.setInjections(userId, v));
       sync('sleep', localDesafio.getSleep(userId), (v) => !v.length, (v) => setSleep(v), (v) => localDesafio.setSleep(userId, v));
+      sync('profile', localDesafio.getProfile(userId), (v) => !Object.keys(v).length, (v) => setProfileData(v), (v) => localDesafio.setProfile(userId, v));
       sync('next_injection', localDesafio.getNextInjection(userId), (v) => !v, (v) => setNextInj(v), (v) => localDesafio.setNextInjection(userId, v));
     }
     // 1ª dose dos 3 (16/10): registra uma vez só; se a pessoa apagar, não volta
@@ -106,9 +114,16 @@ export function useDesafio() {
     const byDay: Record<string, number> = {};
     for (const r of w.data || []) byDay[r.date] = (byDay[r.date] || 0) + (r.amount_ml || 0);
     const trainedDays = (s.data || []).map((r) => r.date);
+    // refeições com foto por dia (a página Refeições grava meal_items = [{ fotos: n }])
+    const meals: Record<string, number> = {};
+    for (const r of m.data || []) {
+      const items = Array.isArray(r.meal_items) ? (r.meal_items as { fotos?: number }[]) : [];
+      if (r.date && items.some((i) => (i?.fotos ?? 0) > 0)) meals[r.date] = (meals[r.date] || 0) + 1;
+    }
     setWater(byDay);
     setTrained(new Set(trainedDays));
-    if (!w.error && !s.error) localDesafio.setDbCache(userId, { water: byDay, trained: trainedDays });
+    setMealPhotos(meals);
+    if (!w.error && !s.error && !m.error) localDesafio.setDbCache(userId, { water: byDay, trained: trainedDays, meals });
     setLoading(false);
   }, [userId]);
 
@@ -131,13 +146,16 @@ export function useDesafio() {
   const days = useMemo(() => {
     const out: Record<string, DayRecord> = {};
     const injected = new Set(injections.map((i) => i.date));
-    const dates = new Set([...Object.keys(water), ...trained, ...Object.keys(checks), ...injected]);
+    const dates = new Set([...Object.keys(water), ...trained, ...Object.keys(checks), ...injected, ...Object.keys(mealPhotos)]);
     for (const d of dates) {
       // injeção vem da lista de aplicações (página Injeção), não do checklist
-      out[d] = { date: d, waterMl: water[d] || 0, waterGoalMl: waterGoalMl, treino: trained.has(d), ...checks[d], inj: injected.has(d) };
+      out[d] = {
+        date: d, waterMl: water[d] || 0, waterGoalMl: waterGoalMl, treino: trained.has(d), ...checks[d],
+        inj: injected.has(d), mealPhotos: mealPhotos[d] || 0,
+      };
     }
     return out;
-  }, [water, trained, checks, injections, waterGoalMl]);
+  }, [water, trained, checks, injections, waterGoalMl, mealPhotos]);
 
   const record = useCallback(
     (d: string): DayRecord => days[d] ?? { date: d, waterMl: 0, waterGoalMl, treino: false },
@@ -181,6 +199,13 @@ export function useDesafio() {
         if (trained.has(date)) {
           const { error } = await supabase.from('workout_sessions').delete().eq('user_id', userId).eq('date', date);
           if (error) return toast.error('Não desmarcou o treino');
+          if (checks[date]?.provaTreino) {
+            removeProof(userId, date, 'treino');
+            const next = { ...checks, [date]: { ...checks[date], provaTreino: false } };
+            setChecks(next);
+            localDesafio.setChecks(userId, next);
+            push('checks', next);
+          }
         } else {
           const { error } = await supabase
             .from('workout_sessions')
@@ -205,12 +230,52 @@ export function useDesafio() {
       if (k === 'coringa' && !cur && Object.values(checks).filter((c) => c.coringa).length >= JOKERS) {
         return toast.error('Os coringas acabaram');
       }
-      const next = { ...checks, [date]: { ...checks[date], [k]: !cur } };
+      const next = { ...checks, [date]: { ...checks[date], [k]: !cur, ...(k === 'cardio' && cur ? { provaCardio: false } : {}) } };
+      if (k === 'cardio' && cur && checks[date]?.provaCardio) removeProof(userId, date, 'cardio');
       setChecks(next);
       localDesafio.setChecks(userId, next);
       push('checks', next);
     },
     [userId, today, trained, checks, injections, saveInjections, push],
+  );
+
+  // marca treino/cardio já com a foto de prova (obrigatória a partir de RULES_V2)
+  const markWithProof = useCallback(
+    async (date: string, kind: ProofKind, photo: Blob) => {
+      if (!userId || date > today) return false;
+      if (!(await uploadProof(userId, date, kind, photo))) {
+        toast.error('Não enviou a prova, confira a internet');
+        return false;
+      }
+      if (kind === 'treino' && !trained.has(date)) {
+        const { error } = await supabase
+          .from('workout_sessions')
+          .insert({ user_id: userId, date, modality: 'academia', finished_at: new Date().toISOString() });
+        if (error) {
+          toast.error('Não registrou o treino');
+          return false;
+        }
+        setTrained((s) => new Set(s).add(date));
+      }
+      const flag = kind === 'treino' ? 'provaTreino' : 'provaCardio';
+      const next = { ...checks, [date]: { ...checks[date], [flag]: true, ...(kind === 'cardio' ? { cardio: true } : {}) } };
+      setChecks(next);
+      localDesafio.setChecks(userId, next);
+      push('checks', next);
+      return true;
+    },
+    [userId, today, trained, checks, push],
+  );
+
+  const saveProfileData = useCallback(
+    (patch: ProfileData) => {
+      if (!userId) return;
+      const next = { ...localDesafio.getProfile(userId), ...patch };
+      setProfileData(next);
+      localDesafio.setProfile(userId, next);
+      push('profile', next);
+    },
+    [userId, push],
   );
 
   const saveWeight = useCallback(
@@ -275,11 +340,12 @@ export function useDesafio() {
     return () => clearTimeout(t);
   }, [userId, player, loading, days, weights]);
 
-  const myStats = player ? stats(days, today, player, weights) : null;
+  // desafios do grupo valem +1 por dia cumprido (lista local, mantida em dia por useChallenges)
+  const myStats = player ? stats(days, today, player, weights, challengePoints(localDesafio.getChallenges(), player, (d) => days[d], today)) : null;
 
   return {
     loading, today, player, choosePlayer, days, record, toggle, weights, saveWeight, removeWeight, myStats, reload: load,
     injections, addInjection, removeInjection, nextInjection, setNextInjection,
-    sleep, addSleep, removeSleep,
+    sleep, addSleep, removeSleep, markWithProof, profileData, saveProfileData, waterGoalMl,
   };
 }

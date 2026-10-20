@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { DEFAULT_WATER_GOAL_ML, todayStr } from '@/lib/desafio/rules';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useDesafio } from '@/hooks/useDesafio';
 import { supabase } from '@/integrations/supabase/client';
 import SectionHeader from '@/components/app/SectionHeader';
 import AppLayout from '@/components/app/AppLayout';
@@ -53,6 +54,8 @@ let lastSeen: { date: string; total: number } | null = null;
 
 const Water = () => {
   const { user, profile, loading } = useAuth();
+  // meta de água fica no perfil do desafio (banco); a do perfil antigo do app não salvava
+  const desafio = useDesafio();
   const navigate = useNavigate();
   // abre com o último total visto hoje (não conta de 0 toda vez que entra na tela)
   const [todayTotal, setTodayTotal] = useState(() => (lastSeen?.date === todayStr() ? lastSeen.total : 0));
@@ -86,11 +89,12 @@ const Water = () => {
   useEffect(() => {
     if (user) {
       fetchTodayWater();
-      if (profile?.water_goal_ml) {
-        setWaterGoal(profile.water_goal_ml);
-      }
     }
   }, [user, profile]);
+
+  useEffect(() => {
+    setWaterGoal(desafio.waterGoalMl);
+  }, [desafio.waterGoalMl]);
 
   const fetchTodayWater = async () => {
     if (!user) return;
@@ -222,6 +226,7 @@ const Water = () => {
       })
       .eq('id', user.id);
     
+    desafio.saveProfileData({ waterGoalMl: calculatedGoal });
     setWaterGoal(calculatedGoal);
     toast.success(`Meta definida: ${calculatedGoal}ml/dia`);
     setShowCalculator(false);
@@ -242,6 +247,7 @@ const Water = () => {
       .update({ water_goal_ml: goal })
       .eq('id', user.id);
     
+    desafio.saveProfileData({ waterGoalMl: goal });
     setWaterGoal(goal);
     toast.success(`Meta definida: ${goal}ml/dia`);
     setShowManualGoal(false);

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useDesafio } from '@/hooks/useDesafio';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -13,11 +14,12 @@ import SectionHeader from '@/components/app/SectionHeader';
 
 const EditProfile = () => {
   const { user, profile, refreshProfile } = useAuth();
+  const desafio = useDesafio();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>((desafio.profileData.avatar || profile?.avatar_url) || null);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
   
   
@@ -42,18 +44,12 @@ const EditProfile = () => {
   const handleCropped = async (dataUrl: string) => {
     if (!user) return;
     setCropFile(null);
-    setUploadingImage(true);
     setAvatarPreview(dataUrl);
-    const error = await saveAvatar(user.id, dataUrl, profile?.full_name);
-    if (error) {
-      console.error('Foto de perfil:', error);
-      toast.error('Não salvou a foto, tente de novo');
-      setAvatarPreview(profile?.avatar_url || null);
-    } else {
-      await refreshProfile();
-      toast.success('Foto atualizada!');
-    }
-    setUploadingImage(false);
+    // a foto fica no perfil do desafio (banco), que é o que as telas mostram;
+    // o perfil antigo do app é só tentativa extra (não salvava)
+    desafio.saveProfileData({ avatar: dataUrl });
+    saveAvatar(user.id, dataUrl, profile?.full_name).then(() => refreshProfile()).catch(() => undefined);
+    toast.success('Foto atualizada!');
   };
 
   const handleSave = async () => {

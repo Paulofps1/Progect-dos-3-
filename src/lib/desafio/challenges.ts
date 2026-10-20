@@ -116,3 +116,16 @@ export function fakeRecord(player: Player, date: string, waterGoalMl = 3000): Da
   return r;
 }
 
+
+/**
+ * Pontos dos desafios do grupo para o placar principal: enquanto um desafio está
+ * valendo (os 3 aceitaram), cada dia cumprido vale +1. Não cumpriu, não ganha.
+ */
+export function challengePoints(list: Challenge[], player: Player, recordOf: (date: string) => DayRecord | undefined, today: string) {
+  let pts = 0;
+  for (const c of list) {
+    if (c.declinedBy || !allIn(c) || today < c.start) continue;
+    for (const d of elapsedDays(c, today)) if (METRIC_DONE[c.metric](recordOf(d))) pts++;
+  }
+  return pts;
+}

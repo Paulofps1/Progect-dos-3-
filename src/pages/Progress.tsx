@@ -181,7 +181,7 @@ function DayDetail({ record, today }: { record: DayRecord; today: string }) {
   const perfect = isPerfect(record);
   const pts = dayPoints(record);
   const label = record.date === today ? 'Hoje' : format(parseISO(record.date), "EEEE, dd/MM", { locale: ptBR });
-  const keys: HabitKey[] = ['agua', 'treino', 'comida', 'doce', 'cardio', 'proteina', 'passos', 'inj'];
+  const keys: HabitKey[] = ['agua', 'treino', 'comida', 'doce', 'cardio', 'passos'];
   return (
     <div className="mt-4 rounded-2xl bg-secondary/60 p-3">
       <div className="flex items-center justify-between gap-2">

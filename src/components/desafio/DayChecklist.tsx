@@ -1,16 +1,22 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronRight, Syringe, Ticket } from 'lucide-react';
+import { Check, ShieldCheck, Ticket } from 'lucide-react';
 import { TONES } from './tones';
+import { ProofSheet } from './ProofSheet';
+import type { ProofKind } from '@/lib/desafio/proofs';
 import {
+  BONUS,
   BONUS_ENABLED,
   CORE,
+  MIN_MEAL_PHOTOS,
+  RULES_V2,
   START,
-  daysBetween,
   dayPoints,
   habitDone,
   isPerfect,
   isSunday,
+  needsProof,
   num,
   type DayRecord,
   type HabitKey,
@@ -19,18 +25,28 @@ import {
 // Checklist do dia no visual da página de Água: anel de progresso, blocos grandes
 // com ícone colorido e marca de feito. É a tela que se usa todo dia.
 
-const EXTRAS: HabitKey[] = ['cardio', 'proteina', 'passos'];
 
 type Props = {
   record: DayRecord;
   toggle: (date: string, key: HabitKey) => void;
   jokersLeft: number;
-  /** Data da última aplicação registrada (para "há X dias"). */
-  lastInjection?: string | null;
+  /** Marca treino/cardio com a foto de prova. */
+  markWithProof: (date: string, kind: ProofKind, photo: Blob) => Promise<boolean>;
 };
 
-export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Props) {
+export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Props) {
   const navigate = useNavigate();
+  const [proof, setProof] = useState<ProofKind | null>(null);
+  const v2 = record.date >= RULES_V2;
+  // treino/cardio: para marcar, pede a foto; para desmarcar, só toca
+  const tap = (k: HabitKey) => {
+    const marked = k === 'treino' ? record.treino : k === 'cardio' ? !!record.cardio : false;
+    if (needsProof(k, record.date) && !habitDone(k, record)) {
+      if (k === 'treino' && marked && !record.provaTreino) return setProof('treino');
+      if (!marked) return setProof(k as ProofKind);
+    }
+    toggle(record.date, k);
+  };
   const perfect = isPerfect(record);
   const done = CORE.filter((k) => habitDone(k, record)).length;
   const pts = dayPoints(record);
@@ -49,8 +65,6 @@ export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Prop
         : done === 3
           ? 'Falta 1 para fechar o dia'
           : `Faltam ${4 - done} para fechar o dia`;
-
-  const injDays = lastInjection ? daysBetween(lastInjection, record.date) : null;
 
   return (
     <section className="relative overflow-hidden bg-card rounded-3xl border border-border/30 shadow-sm p-4 sm:p-5">
@@ -94,12 +108,18 @@ export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Prop
           const t = TONES[k];
           const on = habitDone(k, record);
           const isWater = k === 'agua';
+          const isMeals = k === 'comida' && v2; // automático: conta as refeições com foto
+          const hint = isMeals
+            ? `${Math.min(record.mealPhotos ?? 0, MIN_MEAL_PHOTOS)} de ${MIN_MEAL_PHOTOS} com foto`
+            : k === 'treino' && v2
+              ? on ? 'Com prova' : 'Toque e mande a foto'
+              : on ? 'Feito' : 'Toque para marcar';
           return (
             <motion.button
               key={k}
               whileTap={{ scale: 0.96 }}
-              onClick={() => (isWater ? navigate('/water') : toggle(record.date, k))}
-              aria-pressed={isWater ? undefined : on}
+              onClick={() => (isWater ? navigate('/water') : isMeals ? navigate('/meals') : tap(k))}
+              aria-pressed={isWater || isMeals ? undefined : on}
               className={`relative rounded-2xl p-3 text-left border transition-colors flex flex-col items-start justify-start ${
                 on ? 'bg-primary/15 border-primary/40' : 'bg-secondary/60 border-transparent hover:border-border'
               }`}
@@ -123,7 +143,10 @@ export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Prop
                   </span>
                 </>
               ) : (
-                <span className="block text-[11px] text-muted-foreground">{on ? 'Feito' : 'Toque para marcar'}</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {k === 'treino' && on && v2 && <ShieldCheck className="inline w-3 h-3 mr-0.5 -mt-0.5 text-primary" />}
+                  {hint}
+                </span>
               )}
             </motion.button>
           );
@@ -132,17 +155,17 @@ export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Prop
 
       {/* bônus */}
       <p className="relative text-[11px] font-medium text-muted-foreground mt-4 mb-2">
-        {BONUS_ENABLED ? 'Bônus · +0,5 cada (máx. +1) em dia perfeito' : 'Extras'}
+        {BONUS_ENABLED ? 'Bônus · exercício extra · +0,5 cada em dia perfeito' : 'Extras'}
       </p>
-      <div className="relative grid grid-cols-3 gap-2">
-        {EXTRAS.map((k) => {
+      <div className="relative grid grid-cols-2 gap-2">
+        {BONUS.map((k) => {
           const t = TONES[k];
           const on = habitDone(k, record);
           return (
             <motion.button
               key={k}
               whileTap={{ scale: 0.95 }}
-              onClick={() => toggle(record.date, k)}
+              onClick={() => tap(k)}
               aria-pressed={on}
               className={`rounded-2xl py-2.5 px-1 flex flex-col items-center gap-1 border transition-colors ${
                 on ? 'bg-primary/15 border-primary/40' : 'bg-secondary/60 border-transparent'
@@ -151,46 +174,34 @@ export function DayChecklist({ record, toggle, jokersLeft, lastInjection }: Prop
               <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${on ? 'bg-primary' : t.bg}`}>
                 {on ? <Check className="w-4 h-4 text-primary-foreground" strokeWidth={3} /> : <t.icon className={`w-4 h-4 ${t.fg}`} />}
               </span>
-              <span className="text-[11px] font-medium text-foreground">{t.label}</span>
+              <span className="text-[11px] font-medium text-foreground">
+                {t.label}
+                {k === 'cardio' && v2 && <span className="text-muted-foreground"> · {on ? 'com prova' : 'com foto'}</span>}
+              </span>
             </motion.button>
           );
         })}
       </div>
 
-      {/* injeção e coringa */}
-      <div className="relative grid grid-cols-2 gap-2 mt-2">
-        <button
-          onClick={() => navigate('/injecao')}
-          className={`rounded-2xl p-2.5 flex items-center gap-2.5 text-left border ${record.inj ? 'bg-primary/15 border-primary/40' : 'bg-secondary/60 border-transparent'}`}
-        >
-          <span className={`w-8 h-8 rounded-lg ${TONES.inj.bg} flex items-center justify-center flex-shrink-0`}>
-            <Syringe className={`w-4 h-4 ${TONES.inj.fg}`} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs font-semibold text-foreground">Injeção</span>
-            <span className="block text-[10px] text-muted-foreground truncate">
-              {record.inj ? 'Aplicada neste dia' : injDays == null || injDays < 0 ? 'Nenhuma registrada' : injDays === 0 ? 'Hoje' : `Última há ${injDays} ${injDays === 1 ? 'dia' : 'dias'}`}
-            </span>
-          </span>
-          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-        </button>
-        <button
-          onClick={() => toggle(record.date, 'coringa')}
-          disabled={!record.coringa && jokersLeft <= 0}
-          aria-pressed={!!record.coringa}
-          className={`rounded-2xl p-2.5 flex items-center gap-2.5 text-left border disabled:opacity-40 ${
-            record.coringa ? 'bg-amber-500/15 border-amber-500/40' : 'bg-secondary/60 border-transparent'
-          }`}
-        >
-          <span className={`w-8 h-8 rounded-lg ${TONES.coringa.bg} flex items-center justify-center flex-shrink-0`}>
-            <Ticket className={`w-4 h-4 ${TONES.coringa.fg}`} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-xs font-semibold text-foreground">{record.coringa ? 'Coringa usado' : 'Usar coringa'}</span>
-            <span className="block text-[10px] text-muted-foreground">{jokersLeft} de 2 restantes</span>
-          </span>
-        </button>
-      </div>
+      {/* coringa (injeção é só registro, fica no menu + e não conta ponto) */}
+      <button
+        onClick={() => toggle(record.date, 'coringa')}
+        disabled={!record.coringa && jokersLeft <= 0}
+        aria-pressed={!!record.coringa}
+        className={`relative w-full mt-2 rounded-2xl p-2.5 flex items-center gap-2.5 text-left border disabled:opacity-40 ${
+          record.coringa ? 'bg-amber-500/15 border-amber-500/40' : 'bg-secondary/60 border-transparent'
+        }`}
+      >
+        <span className={`w-8 h-8 rounded-lg ${TONES.coringa.bg} flex items-center justify-center flex-shrink-0`}>
+          <Ticket className={`w-4 h-4 ${TONES.coringa.fg}`} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs font-semibold text-foreground">{record.coringa ? 'Coringa usado' : 'Usar coringa'}</span>
+          <span className="block text-[10px] text-muted-foreground">Salva o dia · {jokersLeft} de 2 restantes</span>
+        </span>
+      </button>
+
+      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photo) => markWithProof(record.date, kind, photo)} />
     </section>
   );
 }

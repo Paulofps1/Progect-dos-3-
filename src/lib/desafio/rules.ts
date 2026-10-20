@@ -8,6 +8,12 @@ export const END = '2026-12-20';
 export const PRIZE = 'R$ 300';
 export const JOKERS = 2;
 export const DEFAULT_WATER_GOAL_ML = 3000;
+/**
+ * A partir deste dia: treino e cardio só valem com foto de prova, e "Comeu direito"
+ * vira automático (no mínimo 2 refeições com foto no dia). Antes, vale a regra antiga.
+ */
+export const RULES_V2 = '2026-10-21';
+export const MIN_MEAL_PHOTOS = 2;
 // Paulo ainda vai decidir se os bônus ficam. Desligar aqui zera os bônus no placar.
 export const BONUS_ENABLED = true;
 
@@ -20,22 +26,29 @@ export type HabitKey = 'agua' | 'treino' | CheckKey;
 export const HABITS: { key: HabitKey; label: string; emoji: string; auto?: boolean }[] = [
   { key: 'agua', label: 'Água', emoji: '💧', auto: true },
   { key: 'treino', label: 'Treinou', emoji: '🏋️' },
-  { key: 'comida', label: 'Comeu direito', emoji: '🍽️' },
+  { key: 'comida', label: '2 pratos com foto', emoji: '🍽️' },
   { key: 'doce', label: 'Zero doce', emoji: '🚫' },
-  { key: 'inj', label: 'Injeção', emoji: '💉' },
   { key: 'coringa', label: 'Coringa', emoji: '🃏' },
   { key: 'cardio', label: 'Cardio', emoji: '🏃' },
-  { key: 'proteina', label: 'Proteína', emoji: '🥩' },
   { key: 'passos', label: 'Passos', emoji: '🚶' },
 ];
 export const CORE: HabitKey[] = ['agua', 'treino', 'comida', 'doce'];
-export const BONUS: HabitKey[] = ['cardio', 'proteina', 'passos'];
+// exercício extra além do treino (proteína saiu; injeção não vale ponto)
+export const BONUS: HabitKey[] = ['cardio', 'passos'];
+/** Hábitos que precisam de foto de prova (a partir de RULES_V2). */
+export const PROOF: ('treino' | 'cardio')[] = ['treino', 'cardio'];
+export const needsProof = (k: HabitKey, date: string) => date >= RULES_V2 && (k === 'treino' || k === 'cardio');
 
 export type DayRecord = {
   date: string;
   waterMl: number;
   waterGoalMl: number;
   treino: boolean;
+  /** Refeições com foto no dia (vem da página Refeições). */
+  mealPhotos?: number;
+  /** Fotos de prova enviadas (treino/cardio). */
+  provaTreino?: boolean;
+  provaCardio?: boolean;
 } & Partial<Record<CheckKey, boolean>>;
 
 export type Weight = { date: string; kg: number };
@@ -101,8 +114,16 @@ export function challengeDays(today: string) {
 }
 
 // ---------- pontuação ----------
-export const habitDone = (k: HabitKey, r?: DayRecord) =>
-  !!r && (k === 'agua' ? r.waterMl >= r.waterGoalMl : !!r[k as 'treino' | CheckKey]);
+export const habitDone = (k: HabitKey, r?: DayRecord): boolean => {
+  if (!r) return false;
+  if (k === 'agua') return r.waterMl >= r.waterGoalMl;
+  if (r.date >= RULES_V2) {
+    if (k === 'comida') return (r.mealPhotos ?? 0) >= MIN_MEAL_PHOTOS;
+    if (k === 'treino') return r.treino && !!r.provaTreino;
+    if (k === 'cardio') return !!r.cardio && !!r.provaCardio;
+  }
+  return !!r[k as 'treino' | CheckKey];
+};
 
 export const isPerfect = (r?: DayRecord) => !!r && (!!r.coringa || CORE.every((k) => habitDone(k, r)));
 
@@ -117,7 +138,8 @@ export const dayPoints = (r?: DayRecord) => {
   return 1 + bonus;
 };
 
-export function stats(days: Record<string, DayRecord>, today: string, player: Player, weights: Weight[]) {
+/** `extra` = pontos de fora do dia a dia (desafios do grupo, ver challenges.ts). */
+export function stats(days: Record<string, DayRecord>, today: string, player: Player, weights: Weight[], extra = 0) {
   let pts = 0;
   let run = 0;
   let perfect = 0;
@@ -135,7 +157,7 @@ export function stats(days: Record<string, DayRecord>, today: string, player: Pl
   const first = INITIAL_WEIGHTS[player];
   const sorted = [...weights].sort((a, b) => (a.date < b.date ? -1 : 1));
   const last = sorted.length ? sorted[sorted.length - 1].kg : first;
-  return { pts, run, perfect, used, first, last, pct: ((first - last) / first) * 100 };
+  return { pts: pts + extra, challengePts: extra, run, perfect, used, first, last, pct: ((first - last) / first) * 100 };
 }
 
 export const num = (n: number, digits = 1) =>

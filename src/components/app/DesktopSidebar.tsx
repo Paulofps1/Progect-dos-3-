@@ -6,6 +6,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebarContext } from '@/contexts/SidebarContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useDesafio } from '@/hooks/useDesafio';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AnimatedIcon from '@/components/app/AnimatedIcon';
 
@@ -14,6 +15,7 @@ const DesktopSidebar = () => {
   const location = useLocation();
   const { isExpanded, toggleSidebar } = useSidebarContext();
   const { profile } = useAuth();
+  const avatar = useDesafio().profileData.avatar || profile?.avatar_url;
 
   const navSections = [
     {
@@ -157,8 +159,8 @@ const DesktopSidebar = () => {
               className={`w-full flex items-center rounded-xl hover:bg-muted/50 transition-all duration-200 ${isExpanded ? 'justify-start gap-4 px-3' : 'justify-center'} py-3`}
             >
               <div className="flex-shrink-0">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Perfil" className="w-10 h-10 rounded-full object-cover border-2 border-border/50 shadow-md" />
+                {avatar ? (
+                  <img src={avatar} alt="Perfil" className="w-10 h-10 rounded-full object-cover border-2 border-border/50 shadow-md" />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-base border border-primary/20 shadow-md">
                     {getInitials()}

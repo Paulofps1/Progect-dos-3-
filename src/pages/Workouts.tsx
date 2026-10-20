@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Dumbbell, Check, Trash2, CalendarDays } from 'lucide-react';
+import { Dumbbell, Check, Trash2, CalendarDays, ShieldCheck } from 'lucide-react';
+import { useDesafio } from '@/hooks/useDesafio';
+import { ProofSheet } from '@/components/desafio/ProofSheet';
+import { needsProof } from '@/lib/desafio/rules';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/app/AppLayout';
@@ -12,7 +15,7 @@ import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Treino aqui é só registro: "treinei hoje" (academia), com observação opcional.
-// Cada registro vira uma linha em workout_sessions.
+// Cada registro vira uma linha em workout_sessions. A partir de 21/10 precisa de foto de prova.
 
 interface Session {
   id: string;
@@ -26,6 +29,8 @@ const Workouts = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const d = useDesafio();
+  const [proofOpen, setProofOpen] = useState(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const trainedToday = sessions.some((s) => s.date === today);
@@ -47,7 +52,11 @@ const Workouts = () => {
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
+  const proofNeeded = needsProof('treino', today);
+  const hasProof = !!d.record(today).provaTreino;
+
   const markTrained = async () => {
+    if (proofNeeded) return setProofOpen(true);
     if (!user || trainedToday) return;
     setSaving(true);
     const { error } = await supabase.from('workout_sessions').insert({
@@ -93,12 +102,26 @@ const Workouts = () => {
               {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </p>
             {trainedToday ? (
+              <>
               <div className="flex items-center gap-3 mt-2">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                   <Check className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-lg font-semibold text-foreground">Treinou hoje ✅</p>
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold text-foreground">Treinou hoje ✅</p>
+                  {proofNeeded && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" /> {hasProof ? 'Prova enviada' : 'Falta a foto de prova para valer ponto'}
+                    </p>
+                  )}
+                </div>
               </div>
+              {proofNeeded && !hasProof && (
+                <Button onClick={() => setProofOpen(true)} className="w-full mt-3 rounded-xl h-11 font-semibold">
+                  Mandar a prova
+                </Button>
+              )}
+              </>
             ) : (
               <>
                 <p className="text-lg font-semibold text-foreground mt-1">Treinou hoje?</p>
@@ -110,11 +133,21 @@ const Workouts = () => {
                   className="w-full mt-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm"
                 />
                 <Button onClick={markTrained} disabled={saving} className="w-full mt-3 rounded-xl h-12 text-base font-semibold">
-                  <Dumbbell className="w-5 h-5 mr-2" /> Treinei hoje
+                  <Dumbbell className="w-5 h-5 mr-2" /> Treinei hoje{proofNeeded ? ' · mandar foto' : ''}
                 </Button>
               </>
             )}
           </motion.div>
+
+          <ProofSheet
+            kind={proofOpen ? 'treino' : null}
+            onClose={() => setProofOpen(false)}
+            onSend={async (kind, photo) => {
+              const ok = await d.markWithProof(today, kind, photo);
+              if (ok) fetchSessions();
+              return ok;
+            }}
+          />
 
           {/* Contagem */}
           <div className="grid grid-cols-2 gap-3">

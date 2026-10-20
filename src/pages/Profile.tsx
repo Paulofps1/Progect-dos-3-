@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDesafio } from '@/hooks/useDesafio';
+import { BodyCard } from '@/components/desafio/BodyCard';
+import { BodyPhotos } from '@/components/desafio/BodyPhotos';
 import { num } from '@/lib/desafio/rules';
 import AppLayout from '@/components/app/AppLayout';
 import { AvatarCropper, saveAvatar } from '@/components/desafio/AvatarCropper';
@@ -45,17 +47,11 @@ const Profile = () => {
   const handleCropped = async (dataUrl: string) => {
     if (!user) return;
     setCropFile(null);
-    setUploadingImage(true);
-    const error = await saveAvatar(user.id, dataUrl, profile?.full_name);
-    if (error) {
-      console.error('Foto de perfil:', error);
-      toast.error('Não salvou a foto, tente de novo');
-      
-    } else {
-      await refreshProfile();
-      toast.success('Foto atualizada!');
-    }
-    setUploadingImage(false);
+    // a foto fica no perfil do desafio (banco), que é o que as telas mostram;
+    // o perfil antigo do app é só tentativa extra (não salvava)
+    desafio.saveProfileData({ avatar: dataUrl });
+    saveAvatar(user.id, dataUrl, profile?.full_name).then(() => refreshProfile()).catch(() => undefined);
+    toast.success('Foto atualizada!');
   };
 
   if (loading) {
@@ -105,8 +101,8 @@ const Profile = () => {
                 >
                   {uploadingImage ? (
                     <Loader2 className="w-8 h-8 text-primary-foreground animate-spin" />
-                  ) : profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (desafio.profileData.avatar || profile?.avatar_url) ? (
+                    <img src={desafio.profileData.avatar || profile?.avatar_url || ''} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-primary-foreground text-3xl font-bold">
                       {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
@@ -166,6 +162,9 @@ const Profile = () => {
             </div>
           </motion.div>
 
+
+          <BodyCard d={desafio} />
+          {user && <BodyPhotos userId={user.id} />}
 
           {/* Menu Items */}
           <motion.div 
