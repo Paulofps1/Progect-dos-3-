@@ -180,7 +180,7 @@ const Achievements = () => {
 
             <div className="grid grid-cols-2 gap-2.5">
               <RuleTile icon={<Plus className="w-5 h-5 text-orange-500" />} tint="bg-orange-500/15" value={BONUS_ENABLED ? '+1' : 'Off'} title="Bônus">
-                {BONUS_ENABLED ? 'Caminhada de 4 km ou mais no dia, com print do Strava ou app Saúde (pode mandar várias fotos). Só em dia perfeito.' : 'Desligados por enquanto.'}
+                {BONUS_ENABLED ? 'Caminhada de 4 km ou mais no dia, com print do Strava ou app Saúde (pode mandar várias fotos). +1 em dia perfeito, +0,5 nos outros.' : 'Desligados por enquanto.'}
               </RuleTile>
               <RuleTile icon={<Flame className="w-5 h-5 text-red-500" />} tint="bg-red-500/15" value="+1" title="Sequência">
                 A cada 7 dias perfeitos seguidos.

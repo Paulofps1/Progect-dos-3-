@@ -140,21 +140,28 @@ export const jokersLeftOf = (used: number) => Math.max(0, JOKERS - used);
 
 /**
  * A partir de 20/10 o dia não é mais tudo ou nada: cada um dos 4 itens vale 0,25 e
- * fechar os 4 dá +0,5 (dia perfeito = 1,5). Caminhada e sequência continuam só em
+ * fechar os 4 dá +0,5 (dia perfeito = 1,5). Caminhada: +1 em dia perfeito, +0,5 nos
+ * outros (nunca vale mais que fechar o dia). Sequência continua só em
  * dia perfeito. Até 19/10: 1 ponto só em dia perfeito.
  */
 export const PARTIAL_FROM = '2026-10-20';
 export const ITEM_PTS = 0.25;
 export const PERFECT_EXTRA = 0.5;
+export const WALK_PERFECT = 1;
+export const WALK_PARTIAL = 0.5;
 
 export const dayPoints = (r?: DayRecord) => {
   if (!r) return 0;
   const partial = r.date >= PARTIAL_FROM;
-  if (!isPerfect(r)) return partial ? CORE.filter((k) => habitDone(k, r)).length * ITEM_PTS : 0;
+  if (!isPerfect(r)) {
+    if (!partial) return 0;
+    const walk = BONUS_ENABLED && habitDone('passos', r) ? WALK_PARTIAL : 0;
+    return CORE.filter((k) => habitDone(k, r)).length * ITEM_PTS + walk;
+  }
   const bonus = !BONUS_ENABLED
     ? 0
     : r!.date >= BONUS_V2
-      ? habitDone('passos', r) ? 1 : 0
+      ? habitDone('passos', r) ? WALK_PERFECT : 0
       : Math.min(1, 0.5 * BONUS.filter((k) => habitDone(k, r)).length);
   return (partial ? CORE.length * ITEM_PTS + PERFECT_EXTRA : 1) + bonus;
 };
@@ -177,7 +184,7 @@ export function ledger(days: Record<string, DayRecord>, today: string): LedgerDa
     }
     const pts = dayPoints(r); // dia incompleto também soma (0,25 por item) a partir de 20/10
     const partial = d >= PARTIAL_FROM;
-    const base = perfect ? (partial ? CORE.length * ITEM_PTS : 1) : pts;
+    const base = perfect ? (partial ? CORE.length * ITEM_PTS : 1) : items * (partial ? ITEM_PTS : 0);
     const extra = perfect && partial ? PERFECT_EXTRA : 0;
     let streak = 0;
     if (perfect) {

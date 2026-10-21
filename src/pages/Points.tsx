@@ -106,7 +106,7 @@ const Points = () => {
               • Fechou os 4 no mesmo dia: <b className="text-foreground">+{fmt(PERFECT_EXTRA)}</b> (dia perfeito = {fmt(CORE.length * ITEM_PTS + PERFECT_EXTRA)}).
             </p>
             <p>
-              • Caminhada 4 km+ com print: <b className="text-foreground">+1</b>, só em dia perfeito.
+              • Caminhada 4 km+ com print: <b className="text-foreground">+1</b> em dia perfeito, <b className="text-foreground">+0,5</b> nos outros.
             </p>
             <p>
               • 7 dias perfeitos seguidos: <b className="text-foreground">+1</b>. Domingo é livre. Desafio do grupo: +1 por dia cumprido.
@@ -199,7 +199,7 @@ function DayMath({ x }: { x: LedgerDay }) {
         <span>Total do dia</span>
         <span className="tabular-nums">{fmt(x.total)}</span>
       </div>
-      {!x.perfect && !old && <p className="text-[11px] text-muted-foreground pt-1">Caminhada e sequência só contam em dia perfeito.</p>}
+      {!x.perfect && !old && <p className="text-[11px] text-muted-foreground pt-1">Se fechasse os 4: +0,5 e a caminhada valeria +1. Sequência só conta em dia perfeito.</p>}
     </div>
   );
 }

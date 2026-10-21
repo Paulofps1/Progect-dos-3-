@@ -145,7 +145,7 @@ export function DayChecklist({ record, toggle, markWithProof }: Props) {
 
       {/* bônus */}
       <p className="relative text-[11px] font-medium text-muted-foreground mt-4 mb-2">
-        {!BONUS_ENABLED ? 'Extras' : record.date >= BONUS_V2 ? 'Bônus · +1 em dia perfeito' : 'Bônus · exercício extra · +0,5 cada em dia perfeito'}
+        {!BONUS_ENABLED ? 'Extras' : record.date >= BONUS_V2 ? 'Bônus · +1 em dia perfeito, +0,5 nos outros' : 'Bônus · exercício extra · +0,5 cada em dia perfeito'}
       </p>
       <div className={`relative grid gap-2 ${record.date >= BONUS_V2 ? 'grid-cols-1' : 'grid-cols-2'}`}>
         {bonusOf(record.date).map((k) => {
