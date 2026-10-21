@@ -221,7 +221,7 @@ const Today = () => {
               className="rounded-2xl bg-card border border-border p-4 text-left"
             >
               <Trophy className="w-4 h-4 text-warning mb-2" />
-              <p className="text-lg font-bold text-foreground leading-none">{desafio.myStats ? num(desafio.myStats.pts) : '–'}</p>
+              <p className="text-lg font-bold text-foreground leading-none">{desafio.myStats ? num(desafio.myStats.pts, 2) : '–'}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">pontos · 🔥 {desafio.myStats?.run ?? 0} seguidos</p>
             </motion.button>
 

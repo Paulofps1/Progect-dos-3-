@@ -218,9 +218,9 @@ function StatusChip({ r }: { r: DayRecord }) {
     : r.date < START
       ? 'Antes do desafio'
       : perfect
-        ? `Perfeito +${num(dayPoints(r))}`
-        : `${dayPercent(r) / 25}/${CORE.length}`;
-  const counts = perfect && !isSunday(r.date) && r.date >= START;
+        ? `Perfeito +${num(dayPoints(r), 2)}`
+        : `${dayPercent(r) / 25}/${CORE.length}${dayPoints(r) ? ` +${num(dayPoints(r), 2)}` : ''}`;
+  const counts = !isSunday(r.date) && r.date >= START && dayPoints(r) > 0;
   return (
     <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 whitespace-nowrap ${counts ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
       {label}

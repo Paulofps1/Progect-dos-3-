@@ -122,7 +122,7 @@ const Achievements = () => {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-foreground leading-none">{s ? num(s.pts) : '–'}</p>
+                  <p className="text-2xl font-bold text-foreground leading-none">{s ? num(s.pts, 2) : '–'}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">pontos</p>
                 </div>
               </button>
@@ -163,8 +163,8 @@ const Achievements = () => {
           <section className="space-y-2.5">
             <h3 className="text-sm font-semibold text-foreground px-1">Regras</h3>
 
-            <RuleTile wide icon={<CalendarCheck className="w-5 h-5 text-primary" />} tint="bg-primary/15" value="1 pt" title="Dia perfeito">
-              <span className="block">Fechar os 4 no mesmo dia (pratos = no mínimo 2 refeições com foto):</span>
+            <RuleTile wide icon={<CalendarCheck className="w-5 h-5 text-primary" />} tint="bg-primary/15" value="0,25" title="Por item · fechou os 4 = 1,5">
+              <span className="block">Cada item feito vale 0,25; fechar os 4 no mesmo dia dá +0,5 (pratos = no mínimo 2 refeições com foto):</span>
               <span className="flex flex-wrap gap-1.5 mt-2">
                 {CORE.map((k) => {
                   const t = TONES[k];
@@ -197,6 +197,10 @@ const Achievements = () => {
             <RuleTile wide icon={<Scale className="w-5 h-5 text-violet-500" />} tint="bg-violet-500/15" value="2 sem." title="Pesagem">
               O foco é a disciplina: ganha quem fizer mais pontos. Pesagem em jejum, a cada 2 semanas; se empatar nos pontos, ganha quem perdeu a maior % de peso.
             </RuleTile>
+
+            <button onClick={() => navigate('/pontos')} className="w-full text-xs font-semibold text-primary py-2">
+              Ver a conta dia a dia (Perfil › Pontos) →
+            </button>
 
             <p className="text-[11px] text-muted-foreground text-center px-4 pt-1">Injeção é só registro (não vale ponto); dose e intervalo são com o médico.</p>
           </section>

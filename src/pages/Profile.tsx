@@ -7,7 +7,7 @@ import { num } from '@/lib/desafio/rules';
 import AppLayout from '@/components/app/AppLayout';
 import { AvatarCropper, saveAvatar } from '@/components/desafio/AvatarCropper';
 import SectionHeader from '@/components/app/SectionHeader';
-import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy, Scale, Images, Download, DownloadCloud } from 'lucide-react';
+import { ChevronRight, LogOut, User, History, Camera, ImagePlus, Flame, Loader2, Trophy, Scale, Images, Download, DownloadCloud, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,6 +69,7 @@ const Profile = () => {
   const menuItems = [
     { icon: Scale, label: 'IMC e meta de peso', action: () => navigate('/corpo'), desc: 'Calculadora de IMC e quanto falta' },
     { icon: Images, label: 'Evolução em fotos', action: () => navigate('/evolucao'), desc: 'Seu antes e depois' },
+    { icon: Coins, label: 'Pontos', action: () => navigate('/pontos'), desc: 'De onde veio cada ponto, seu e dos outros, com as provas' },
     { icon: History, label: 'Meu histórico', action: () => navigate('/historico'), desc: 'Seus dias, refeições, água, treinos e injeções' },
   ];
   const settingsItems = [
@@ -168,7 +169,7 @@ const Profile = () => {
               <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center mx-auto mb-2">
                 <Trophy className="w-5 h-5 text-info" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{desafio.myStats ? num(desafio.myStats.pts) : 0}</p>
+              <p className="text-2xl font-bold text-foreground">{desafio.myStats ? num(desafio.myStats.pts, 2) : 0}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Pontos no desafio</p>
             </div>
           </motion.div>

@@ -26,6 +26,7 @@ import { ErrorBoundary } from "@/components/app/ErrorBoundary";
 import Body from "./pages/Body";
 import Evolution from "./pages/Evolution";
 import Migrate from "./pages/Migrate";
+import Points from "./pages/Points";
 import History from "./pages/History";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const AppRoutes = () => (
     <Route path="/evolucao" element={<Evolution />} />
     <Route path="/trazer" element={<Migrate />} />
     <Route path="/historico" element={<History />} />
+    <Route path="/pontos" element={<Points />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

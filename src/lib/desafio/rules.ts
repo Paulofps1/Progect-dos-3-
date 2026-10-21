@@ -138,31 +138,73 @@ export const dayPercent = (r?: DayRecord) => (r ? CORE.filter((k) => habitDone(k
 
 export const jokersLeftOf = (used: number) => Math.max(0, JOKERS - used);
 
+/**
+ * A partir de 20/10 o dia não é mais tudo ou nada: cada um dos 4 itens vale 0,25 e
+ * fechar os 4 dá +0,5 (dia perfeito = 1,5). Caminhada e sequência continuam só em
+ * dia perfeito. Até 19/10: 1 ponto só em dia perfeito.
+ */
+export const PARTIAL_FROM = '2026-10-20';
+export const ITEM_PTS = 0.25;
+export const PERFECT_EXTRA = 0.5;
+
 export const dayPoints = (r?: DayRecord) => {
-  if (!isPerfect(r)) return 0;
+  if (!r) return 0;
+  const partial = r.date >= PARTIAL_FROM;
+  if (!isPerfect(r)) return partial ? CORE.filter((k) => habitDone(k, r)).length * ITEM_PTS : 0;
   const bonus = !BONUS_ENABLED
     ? 0
     : r!.date >= BONUS_V2
       ? habitDone('passos', r) ? 1 : 0
       : Math.min(1, 0.5 * BONUS.filter((k) => habitDone(k, r)).length);
-  return 1 + bonus;
+  return (partial ? CORE.length * ITEM_PTS + PERFECT_EXTRA : 1) + bonus;
 };
 
 /** `extra` = pontos de fora do dia a dia (desafios do grupo, ver challenges.ts). */
-export function stats(days: Record<string, DayRecord>, today: string, player: Player, weights: Weight[], extra = 0) {
-  let pts = 0;
+/** Extrato dia a dia: de onde veio cada ponto (base, fechar os 4, caminhada e sequência). */
+export type LedgerDay = { date: string; items: number; perfect: boolean; sunday: boolean; base: number; extra: number; bonus: number; streak: number; total: number };
+
+export function ledger(days: Record<string, DayRecord>, today: string): LedgerDay[] {
+  const out: LedgerDay[] = [];
   let run = 0;
-  let perfect = 0;
   for (const d of challengeDays(today)) {
-    if (isSunday(d)) continue; // domingo livre: não conta nem quebra sequência
     const r = days[d];
-    if (isPerfect(r)) {
-      pts += dayPoints(r);
-      perfect++;
+    const items = r ? CORE.filter((k) => habitDone(k, r)).length : 0;
+    const perfect = isPerfect(r);
+    if (isSunday(d)) {
+      // domingo livre: não conta nem quebra sequência
+      out.push({ date: d, items, perfect, sunday: true, base: 0, extra: 0, bonus: 0, streak: 0, total: 0 });
+      continue;
+    }
+    const pts = dayPoints(r); // dia incompleto também soma (0,25 por item) a partir de 20/10
+    const partial = d >= PARTIAL_FROM;
+    const base = perfect ? (partial ? CORE.length * ITEM_PTS : 1) : pts;
+    const extra = perfect && partial ? PERFECT_EXTRA : 0;
+    let streak = 0;
+    if (perfect) {
       run++;
-      if (run % 7 === 0) pts++; // 7 perfeitos seguidos
+      if (run % 7 === 0) streak = 1; // 7 perfeitos seguidos
     } else if (d !== today) run = 0; // hoje ainda pode virar perfeito
+    out.push({ date: d, items, perfect, sunday: false, base, extra, bonus: pts - base - extra, streak, total: pts + streak });
   }
+  return out;
+}
+
+/** Sequência atual de dias perfeitos (domingo não quebra; hoje ainda pode virar). */
+const runOf = (l: LedgerDay[], today: string) => {
+  let run = 0;
+  for (const x of l) {
+    if (x.sunday) continue;
+    if (x.perfect) run++;
+    else if (x.date !== today) run = 0;
+  }
+  return run;
+};
+
+export function stats(days: Record<string, DayRecord>, today: string, player: Player, weights: Weight[], extra = 0) {
+  const l = ledger(days, today);
+  const pts = l.reduce((a, x) => a + x.total, 0);
+  const perfect = l.filter((x) => x.perfect && !x.sunday).length;
+  const run = runOf(l, today);
   const used = Object.values(days).filter((r) => r.coringa).length;
   const first = INITIAL_WEIGHTS[player];
   const sorted = [...weights].sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -171,7 +213,7 @@ export function stats(days: Record<string, DayRecord>, today: string, player: Pl
 }
 
 export const num = (n: number, digits = 1) =>
-  (Number.isInteger(n) ? String(n) : n.toFixed(digits)).replace('.', ',');
+  (Number.isInteger(n) ? String(n) : String(+n.toFixed(digits))).replace('.', ','); // 0,5 e não 0,50
 
 /** Liga o nome do perfil a um dos jogadores (sem acento, só o primeiro nome). */
 export function playerFromName(name?: string | null): Player | null {

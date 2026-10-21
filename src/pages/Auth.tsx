@@ -82,7 +82,7 @@ const Auth = () => {
         {/* As regras em três linhas */}
         <motion.ul initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-6 grid gap-2">
           {[
-            ['1 pt', 'por dia perfeito', 'água na meta, treino, 2 pratos com foto e zero doce'],
+            ['0,25', 'por item feito', 'água na meta, treino, 2 pratos com foto e zero doce; fechou os 4 = 1,5'],
             ['+1', 'a cada 7 seguidos', 'e por dia cumprido nos desafios do grupo'],
             ['Dom', 'é livre', 'não conta nem quebra a sequência; empate vai para quem perdeu mais %'],
           ].map(([big, title, desc]) => (

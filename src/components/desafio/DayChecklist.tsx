@@ -57,9 +57,7 @@ export function DayChecklist({ record, toggle, markWithProof }: Props) {
       ? 'Antes de 19/10 não conta ponto'
       : perfect
         ? 'Dia perfeito! Mandou bem'
-        : done === 3
-          ? 'Falta 1 para fechar o dia'
-          : `Faltam ${4 - done} para fechar o dia`;
+        : `${done === 3 ? 'Falta 1' : `Faltam ${4 - done}`} para fechar o dia`;
 
   return (
     <section className="relative overflow-hidden bg-card rounded-3xl border border-border/30 shadow-sm p-4 sm:p-5">
@@ -90,9 +88,9 @@ export function DayChecklist({ record, toggle, markWithProof }: Props) {
           <p className="text-base font-semibold text-foreground">Desafio do dia</p>
           <p className="text-xs text-muted-foreground">{status}</p>
         </div>
-        {perfect && pts > 0 && (
-          <span className="rounded-full bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 whitespace-nowrap">
-            +{num(pts)} pt{pts === 1 ? '' : 's'}
+        {pts > 0 && !isSunday(record.date) && (
+          <span className={`rounded-full text-xs font-bold px-2.5 py-1 whitespace-nowrap ${perfect ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
+            +{num(pts, 2)} pt{pts <= 1 ? '' : 's'}
           </span>
         )}
       </div>

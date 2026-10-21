@@ -88,7 +88,7 @@ const Progress = () => {
             <div className="relative flex items-center gap-5">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Seus pontos</p>
-                <p className="text-5xl font-bold text-foreground leading-none mt-1 tabular-nums">{s ? num(s.pts) : '–'}</p>
+                <p className="text-5xl font-bold text-foreground leading-none mt-1 tabular-nums">{s ? num(s.pts, 2) : '–'}</p>
                 {s && s.pct !== 0 && (
                   <p className={`text-xs font-semibold mt-2 ${s.pct > 0 ? 'text-emerald-600' : 'text-destructive'}`}>
                     {num(s.pct)}% {s.pct > 0 ? 'de peso perdido' : 'de peso a mais'}
@@ -202,7 +202,7 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-foreground first-letter:uppercase">{label}</p>
         <span className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${perfect ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'}`}>
-          {isSunday(record.date) ? 'Domingo livre' : perfect ? `Perfeito · +${num(pts)}` : `${dayPercent(record) / 25} de 4`}
+          {isSunday(record.date) ? 'Domingo livre' : perfect ? `Perfeito · +${num(pts, 2)}` : `${dayPercent(record) / 25} de 4${pts ? ` · +${num(pts, 2)}` : ''}`}
         </span>
       </div>
       <div className="flex flex-wrap gap-1.5 mt-2.5">
