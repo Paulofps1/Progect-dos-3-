@@ -38,10 +38,9 @@ export function DayChecklist({ record, toggle, markWithProof }: Props) {
   const navigate = useNavigate();
   const [proof, setProof] = useState<ProofKind | null>(null);
   const v2 = record.date >= RULES_V2;
-  // caminhada (a partir de 21/10): para marcar, pede o print; para desmarcar, só toca
+  // caminhada (a partir de 21/10): abre a tela da prova, para mandar, ver, apagar ou desmarcar
   const tap = (k: HabitKey) => {
-    const marked = k === 'passos' ? !!record.passos && !!record.provaPassos : k === 'cardio' && !!record.cardio;
-    if (needsProof(k, record.date) && !marked) return setProof(k as ProofKind);
+    if (needsProof(k, record.date)) return setProof(k as ProofKind);
     toggle(record.date, k);
   };
   const perfect = isPerfect(record);
@@ -173,7 +172,13 @@ export function DayChecklist({ record, toggle, markWithProof }: Props) {
         })}
       </div>
 
-      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photos) => markWithProof(record.date, kind, photos)} />
+      <ProofSheet
+        kind={proof}
+        date={record.date}
+        onClose={() => setProof(null)}
+        onSend={(kind, photos) => markWithProof(record.date, kind, photos)}
+        onUnmark={(kind) => record[kind] && toggle(record.date, kind)}
+      />
     </section>
   );
 }

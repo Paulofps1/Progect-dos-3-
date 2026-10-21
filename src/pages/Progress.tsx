@@ -190,7 +190,7 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
     const on = habitDone(k, record);
     if (k === 'agua') return on ? toast('Água de um dia que passou só dá para completar, não tirar') : d.fillWater(record.date);
     if (k === 'comida' && record.date >= RULES_V2) return navigate(`/meals?dia=${record.date}`); // automático: fotos dos pratos
-    if (needsProof(k, record.date) && !(record.passos && record.provaPassos)) return setProof(k as ProofKind);
+    if (needsProof(k, record.date)) return setProof(k as ProofKind); // mandar, ver, apagar ou desmarcar
     d.toggle(record.date, k);
   };
   const perfect = isPerfect(record);
@@ -229,7 +229,13 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
           <p className="text-[10px] text-muted-foreground">Esqueceu de marcar? Toque nos itens deste dia.</p>
         </div>
       )}
-      <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photos) => d.markWithProof(record.date, kind, photos)} />
+      <ProofSheet
+        kind={proof}
+        date={record.date}
+        onClose={() => setProof(null)}
+        onSend={(kind, photos) => d.markWithProof(record.date, kind, photos)}
+        onUnmark={(kind) => record[kind] && d.toggle(record.date, kind)}
+      />
     </div>
   );
 }

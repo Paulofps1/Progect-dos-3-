@@ -45,11 +45,26 @@ export async function removeProofs(userId: string, date: string, kind: ProofKind
   if (list.length) await supabase.storage.from(BUCKET).remove(list.map((n) => `${folder(userId, date)}/${n}`));
 }
 
-/** Endereços temporários (1 h) das fotos de prova de alguém naquele dia. */
+/** Fotos de prova de alguém naquele dia: caminho no banco + endereço temporário (1 h). */
+export async function proofFiles(userId: string, date: string, kind: ProofKind): Promise<{ path: string; url: string }[]> {
+  if (IS_DEMO) return (demo.get(demoKey(userId, date, kind)) ?? []).map((u) => ({ path: u, url: u }));
+  const paths = (await names(userId, date, kind)).map((n) => `${folder(userId, date)}/${n}`);
+  if (!paths.length) return [];
+  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600);
+  return (data || []).flatMap((d, i) => (d.signedUrl ? [{ path: paths[i], url: d.signedUrl }] : []));
+}
+
 export async function proofUrls(userId: string, date: string, kind: ProofKind): Promise<string[]> {
-  if (IS_DEMO) return demo.get(demoKey(userId, date, kind)) ?? [];
-  const list = await names(userId, date, kind);
-  if (!list.length) return [];
-  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(list.map((n) => `${folder(userId, date)}/${n}`), 3600);
-  return (data || []).map((d) => d.signedUrl).filter((u): u is string => !!u);
+  return (await proofFiles(userId, date, kind)).map((f) => f.url);
+}
+
+/** Apaga uma foto só (mandou a errada). */
+export async function removeProof(userId: string, date: string, kind: ProofKind, path: string) {
+  if (IS_DEMO) {
+    const k = demoKey(userId, date, kind);
+    demo.set(k, (demo.get(k) || []).filter((u) => u !== path));
+    return true;
+  }
+  const { error } = await supabase.storage.from(BUCKET).remove([path]);
+  return !error;
 }

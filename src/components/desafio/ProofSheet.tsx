@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Camera, ImageIcon, Loader2, Plus, ShieldCheck, X } from 'lucide-react';
+import { Camera, ImageIcon, Loader2, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { shrinkPhoto } from '@/lib/desafio/localStore';
-import type { ProofKind } from '@/lib/desafio/proofs';
+import { proofFiles, removeProof, type ProofKind } from '@/lib/desafio/proofs';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 // Fotos de prova (print do Strava / app Saúde). Pode mandar mais de uma, por exemplo
 // a ida e a volta da academia. Os outros participantes conseguem ver.
+// Se já mandou, mostra as fotos enviadas: dá para apagar uma (mandou errada) ou
+// desmarcar tudo. Apagar a última foto desmarca a caminhada.
 
 const MAX = 6;
 const COPY: Record<ProofKind, { title: string; hint: string; done: string }> = {
@@ -21,16 +24,53 @@ const COPY: Record<ProofKind, { title: string; hint: string; done: string }> = {
   cardio: { title: 'Prova do cardio', hint: 'Print do Strava ou do app Saúde/Fitness mostrando distância ou tempo do dia.', done: 'Cardio marcado com prova' },
 };
 
-type Props = { kind: ProofKind | null; onClose: () => void; onSend: (kind: ProofKind, photos: Blob[]) => Promise<boolean> };
+type Props = {
+  kind: ProofKind | null;
+  date: string;
+  onClose: () => void;
+  onSend: (kind: ProofKind, photos: Blob[]) => Promise<boolean>;
+  /** desmarca o item e apaga as fotos do dia */
+  onUnmark: (kind: ProofKind) => void;
+};
 
-export function ProofSheet({ kind, onClose, onSend }: Props) {
+export function ProofSheet({ kind, date, onClose, onSend, onUnmark }: Props) {
+  const { user } = useAuth();
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Blob[]>([]);
   const [busy, setBusy] = useState(false);
   const urls = useMemo(() => photos.map((p) => URL.createObjectURL(p)), [photos]);
   useEffect(() => () => urls.forEach((u) => URL.revokeObjectURL(u)), [urls]);
-  useEffect(() => setPhotos([]), [kind]);
+  const [sent, setSent] = useState<{ path: string; url: string }[]>([]);
+  const [asking, setAsking] = useState<string | null>(null); // foto (ou 'tudo') esperando confirmar
+  useEffect(() => {
+    setPhotos([]);
+    setAsking(null);
+    setSent([]);
+    if (kind && user) proofFiles(user.id, date, kind).then(setSent);
+  }, [kind, date, user]);
+
+  const drop = async (path: string) => {
+    if (!kind || !user) return;
+    setBusy(true);
+    const ok = await removeProof(user.id, date, kind, path);
+    setBusy(false);
+    setAsking(null);
+    if (!ok) return toast.error('Não apagou, confira a internet');
+    const left = sent.filter((f) => f.path !== path);
+    setSent(left);
+    if (!left.length) {
+      onUnmark(kind);
+      toast('Foto apagada · caminhada desmarcada');
+      onClose();
+    } else toast('Foto apagada');
+  };
+  const unmarkAll = () => {
+    if (!kind) return;
+    onUnmark(kind);
+    toast('Caminhada desmarcada e fotos apagadas');
+    onClose();
+  };
 
   const pick = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -49,7 +89,7 @@ export function ProofSheet({ kind, onClose, onSend }: Props) {
     const ok = await onSend(kind, photos);
     setBusy(false);
     if (ok) {
-      toast.success(COPY[kind].done);
+      toast.success(sent.length ? 'Fotos enviadas' : COPY[kind].done);
       onClose();
     }
   };
@@ -82,6 +122,38 @@ export function ProofSheet({ kind, onClose, onSend }: Props) {
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">{COPY[kind].hint} Os outros participantes podem ver.</p>
+
+            {sent.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-foreground">Já enviadas · toque na lixeira para apagar uma</p>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {sent.map((f) => (
+                    <div key={f.path} className="relative">
+                      <img src={f.url} alt="" className="w-full aspect-[3/4] object-cover rounded-xl bg-secondary" />
+                      {asking === f.path ? (
+                        <div className="absolute inset-0 rounded-xl bg-black/70 flex flex-col items-center justify-center gap-1.5 p-1">
+                          <button onClick={() => drop(f.path)} disabled={busy} className="rounded-lg bg-destructive text-destructive-foreground text-xs font-semibold px-2.5 py-1.5">
+                            Apagar
+                          </button>
+                          <button onClick={() => setAsking(null)} className="text-white text-[11px]">
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setAsking(f.path)}
+                          aria-label="Apagar esta foto"
+                          className="absolute top-1 right-1 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs font-semibold text-foreground mt-4">Mandar mais</p>
+              </div>
+            )}
 
             {photos.length ? (
               <div className="grid grid-cols-3 gap-2 mt-4">
@@ -120,12 +192,33 @@ export function ProofSheet({ kind, onClose, onSend }: Props) {
             <Button onClick={send} disabled={!photos.length || busy} className="w-full h-12 rounded-2xl font-semibold mt-4">
               {busy ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
+              ) : sent.length ? (
+                photos.length > 1 ? `Enviar mais ${photos.length} fotos` : 'Enviar mais'
               ) : photos.length > 1 ? (
                 `Enviar ${photos.length} fotos e marcar`
               ) : (
                 'Enviar e marcar'
               )}
             </Button>
+
+            {sent.length > 0 &&
+              (asking === 'tudo' ? (
+                <div className="mt-3 rounded-2xl bg-destructive/10 p-3 text-center">
+                  <p className="text-xs text-foreground">Desmarcar a caminhada e apagar {sent.length > 1 ? `as ${sent.length} fotos` : 'a foto'}?</p>
+                  <div className="flex gap-2 justify-center mt-2">
+                    <button onClick={unmarkAll} className="rounded-lg bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1.5">
+                      Sim, desmarcar
+                    </button>
+                    <button onClick={() => setAsking(null)} className="rounded-lg bg-secondary text-foreground text-xs font-semibold px-3 py-1.5">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setAsking('tudo')} className="w-full text-xs font-semibold text-destructive mt-3 py-1">
+                  Lancei errado · desmarcar e apagar tudo
+                </button>
+              ))}
 
             <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { pick(e.target.files); e.target.value = ''; }} />
             <input ref={gallery} type="file" accept="image/*" multiple hidden onChange={(e) => { pick(e.target.files); e.target.value = ''; }} />
