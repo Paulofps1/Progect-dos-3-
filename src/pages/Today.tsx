@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDesafio } from '@/hooks/useDesafio';
 import { PlayerPicker } from '@/components/desafio/DesafioParts';
 import { DayChecklist } from '@/components/desafio/DayChecklist';
-import { DEFAULT_WATER_GOAL_ML, fmtHours, jokersLeftOf, num } from '@/lib/desafio/rules';
+import { DEFAULT_WATER_GOAL_ML, fmtHours, num } from '@/lib/desafio/rules';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -199,7 +199,6 @@ const Today = () => {
             record={desafio.record(today)}
             toggle={desafio.toggle}
             markWithProof={desafio.markWithProof}
-            jokersLeft={jokersLeftOf(Object.values(desafio.days).filter((r) => r.coringa).length)}
           />
 
           {/* ── Metric Cards (3 cols) ── */}

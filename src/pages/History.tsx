@@ -218,9 +218,7 @@ function StatusChip({ r }: { r: DayRecord }) {
     : r.date < START
       ? 'Antes do desafio'
       : perfect
-        ? r.coringa
-          ? 'Coringa'
-          : `Perfeito +${num(dayPoints(r))}`
+        ? `Perfeito +${num(dayPoints(r))}`
         : `${dayPercent(r) / 25}/${CORE.length}`;
   const counts = perfect && !isSunday(r.date) && r.date >= START;
   return (

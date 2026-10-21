@@ -84,7 +84,7 @@ const Auth = () => {
           {[
             ['1 pt', 'por dia perfeito', 'água na meta, treino, 2 pratos com foto e zero doce'],
             ['+1', 'a cada 7 seguidos', 'e por dia cumprido nos desafios do grupo'],
-            ['2', 'coringas cada', 'domingo é livre; empate vai para quem perdeu mais %'],
+            ['Dom', 'é livre', 'não conta nem quebra a sequência; empate vai para quem perdeu mais %'],
           ].map(([big, title, desc]) => (
             <li key={title} className="flex items-center gap-3 rounded-2xl bg-card/70 border border-border/40 px-3 py-2.5">
               <span className="w-12 flex-shrink-0 text-center text-lg font-extrabold text-primary-foreground bg-primary rounded-xl py-1">{big}</span>

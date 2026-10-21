@@ -31,7 +31,6 @@ export const HABITS: { key: HabitKey; label: string; emoji: string; auto?: boole
   { key: 'treino', label: 'Treinou', emoji: '🏋️' },
   { key: 'comida', label: '2 pratos com foto', emoji: '🍽️' },
   { key: 'doce', label: 'Zero doce', emoji: '🚫' },
-  { key: 'coringa', label: 'Coringa', emoji: '🃏' },
   { key: 'cardio', label: 'Cardio', emoji: '🏃' },
   { key: 'passos', label: 'Caminhada 4 km+', emoji: '🚶' },
 ];
@@ -131,7 +130,8 @@ export const habitDone = (k: HabitKey, r?: DayRecord): boolean => {
   return !!r[k as 'treino' | CheckKey];
 };
 
-export const isPerfect = (r?: DayRecord) => !!r && (!!r.coringa || CORE.every((k) => habitDone(k, r)));
+// (o coringa saiu do desafio: nenhum dia é salvo sem fechar os 4)
+export const isPerfect = (r?: DayRecord) => !!r && CORE.every((k) => habitDone(k, r));
 
 /** % do dia: água + treino + comida + doce, 25% cada. */
 export const dayPercent = (r?: DayRecord) => (r ? CORE.filter((k) => habitDone(k, r)).length * 25 : 0);

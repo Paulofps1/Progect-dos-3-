@@ -11,7 +11,6 @@ import {
   FIRST_DOSE,
   FOUNDERS,
   slug,
-  JOKERS,
   PLAYERS,
   playerFromName,
   stats,
@@ -231,9 +230,6 @@ export function useDesafio() {
       }
       const k = key as CheckKey;
       const cur = checks[date]?.[k];
-      if (k === 'coringa' && !cur && Object.values(checks).filter((c) => c.coringa).length >= JOKERS) {
-        return toast.error('Os coringas acabaram');
-      }
       // desmarcar cardio/caminhada apaga também as fotos de prova daquele dia
       const proofFlag = k === 'cardio' ? 'provaCardio' : k === 'passos' ? 'provaPassos' : null;
       const next = { ...checks, [date]: { ...checks[date], [k]: !cur, ...(proofFlag && cur ? { [proofFlag]: false } : {}) } };

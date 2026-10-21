@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CalendarCheck, Flame, Scale, Ticket, Trash2, Utensils, Droplets, Dumbbell, Loader2, Moon } from 'lucide-react';
+import { CalendarCheck, Flame, Scale, Trash2, Utensils, Droplets, Dumbbell, Loader2, Moon } from 'lucide-react';
 import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AppLayout from '@/components/app/AppLayout';
@@ -16,7 +16,6 @@ import type { ProofKind } from '@/lib/desafio/proofs';
 import {
   END,
   INITIAL_WEIGHTS,
-  JOKERS,
   START,
   dayPercent,
   dayPoints,
@@ -26,7 +25,6 @@ import {
   habitDone,
   isPerfect,
   isSunday,
-  jokersLeftOf,
   monthDays,
   needsProof,
   bonusOf,
@@ -51,7 +49,6 @@ const Progress = () => {
     if (!authLoading && !user) navigate('/auth');
   }, [user, authLoading, navigate]);
 
-  const used = Object.values(d.days).filter((r) => r.coringa).length;
   const last7 = useMemo(() => Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), i), 'yyyy-MM-dd')), []);
   const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
   const slept7 = d.sleep.filter((s) => !s.nap && last7.includes(s.date)).map((s) => s.hours);
@@ -101,7 +98,6 @@ const Progress = () => {
               <div className="flex-1 grid gap-2">
                 <MiniPill icon={<Flame className="w-4 h-4 text-orange-500" />} value={s ? String(s.run) : '–'} label="seguidos" />
                 <MiniPill icon={<CalendarCheck className="w-4 h-4 text-primary" />} value={s ? String(s.perfect) : '–'} label="dias perfeitos" />
-                <MiniPill icon={<Ticket className="w-4 h-4 text-amber-600" />} value={`${jokersLeftOf(used)}/${JOKERS}`} label="coringas" />
               </div>
             </div>
             <div className="relative mt-5">
@@ -206,7 +202,7 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-foreground first-letter:uppercase">{label}</p>
         <span className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${perfect ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'}`}>
-          {isSunday(record.date) ? 'Domingo livre' : perfect ? (record.coringa ? 'Coringa' : `Perfeito · +${num(pts)}`) : `${dayPercent(record) / 25} de 4`}
+          {isSunday(record.date) ? 'Domingo livre' : perfect ? `Perfeito · +${num(pts)}` : `${dayPercent(record) / 25} de 4`}
         </span>
       </div>
       <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -231,11 +227,6 @@ function DayDetail({ record, today, d }: { record: DayRecord; today: string; d: 
       {editable && record.date !== today && (
         <div className="flex items-center justify-between gap-2 mt-2">
           <p className="text-[10px] text-muted-foreground">Esqueceu de marcar? Toque nos itens deste dia.</p>
-          {!isSunday(record.date) && (
-            <button onClick={() => d.toggle(record.date, 'coringa')} className="text-[11px] font-semibold text-amber-600 whitespace-nowrap">
-              {record.coringa ? 'Tirar coringa' : 'Usar coringa'}
-            </button>
-          )}
         </div>
       )}
       <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photos) => d.markWithProof(record.date, kind, photos)} />

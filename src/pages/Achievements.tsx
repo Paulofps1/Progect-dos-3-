@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CalendarCheck, Flame, Plus, Scale, Sun, Swords, Ticket, Trophy } from 'lucide-react';
+import { CalendarCheck, Flame, Plus, Scale, Sun, Swords, Trophy } from 'lucide-react';
 import { TONES } from '@/components/desafio/tones';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,7 +21,6 @@ import {
   type DayRecord,
   END,
   INITIAL_WEIGHTS,
-  JOKERS,
   PLAYERS,
   PRIZE,
   START,
@@ -185,9 +184,6 @@ const Achievements = () => {
               </RuleTile>
               <RuleTile icon={<Flame className="w-5 h-5 text-red-500" />} tint="bg-red-500/15" value="+1" title="Sequência">
                 A cada 7 dias perfeitos seguidos.
-              </RuleTile>
-              <RuleTile icon={<Ticket className="w-5 h-5 text-amber-600" />} tint="bg-amber-500/15" value={String(JOKERS)} title="Coringas">
-                Por pessoa, no desafio todo. Cada um salva um dia.
               </RuleTile>
               <RuleTile icon={<Sun className="w-5 h-5 text-sky-500" />} tint="bg-sky-500/15" value="Livre" title="Domingo">
                 Não conta ponto nem quebra a sequência.

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, Ticket } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { TONES } from './tones';
 import { ProofSheet } from './ProofSheet';
 import type { ProofKind } from '@/lib/desafio/proofs';
@@ -30,12 +30,11 @@ import {
 type Props = {
   record: DayRecord;
   toggle: (date: string, key: HabitKey) => void;
-  jokersLeft: number;
   /** Marca com as fotos de prova (caminhada). */
   markWithProof: (date: string, kind: ProofKind, photos: Blob[]) => Promise<boolean>;
 };
 
-export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Props) {
+export function DayChecklist({ record, toggle, markWithProof }: Props) {
   const navigate = useNavigate();
   const [proof, setProof] = useState<ProofKind | null>(null);
   const v2 = record.date >= RULES_V2;
@@ -57,9 +56,7 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
     : record.date < START
       ? 'Antes de 19/10 não conta ponto'
       : perfect
-        ? record.coringa
-          ? 'Dia salvo pelo coringa'
-          : 'Dia perfeito! Mandou bem'
+        ? 'Dia perfeito! Mandou bem'
         : done === 3
           ? 'Falta 1 para fechar o dia'
           : `Faltam ${4 - done} para fechar o dia`;
@@ -177,24 +174,6 @@ export function DayChecklist({ record, toggle, jokersLeft, markWithProof }: Prop
           );
         })}
       </div>
-
-      {/* coringa (injeção é só registro, fica no menu + e não conta ponto) */}
-      <button
-        onClick={() => toggle(record.date, 'coringa')}
-        disabled={!record.coringa && jokersLeft <= 0}
-        aria-pressed={!!record.coringa}
-        className={`relative w-full mt-2 rounded-2xl p-2.5 flex items-center gap-2.5 text-left border disabled:opacity-40 ${
-          record.coringa ? 'bg-amber-500/15 border-amber-500/40' : 'bg-secondary/60 border-transparent'
-        }`}
-      >
-        <span className={`w-8 h-8 rounded-lg ${TONES.coringa.bg} flex items-center justify-center flex-shrink-0`}>
-          <Ticket className={`w-4 h-4 ${TONES.coringa.fg}`} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-xs font-semibold text-foreground">{record.coringa ? 'Coringa usado' : 'Usar coringa'}</span>
-          <span className="block text-[10px] text-muted-foreground">Salva o dia · {jokersLeft} de 2 restantes</span>
-        </span>
-      </button>
 
       <ProofSheet kind={proof} onClose={() => setProof(null)} onSend={(kind, photos) => markWithProof(record.date, kind, photos)} />
     </section>
