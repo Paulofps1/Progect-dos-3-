@@ -1,13 +1,18 @@
-// Regras do Desafio dos 4. Funções puras: sem React, sem banco.
+// Regras do Desafio dos 3. Funções puras: sem React, sem banco.
 
-export const PLAYERS = ['Paulo', 'Arthur', 'Rafaela', 'Rogério'] as const;
-/** Os 3 do começo: desafios criados antes do Rogério entrar valem só entre eles. */
-export const FOUNDERS: Player[] = ['Paulo', 'Arthur', 'Rafaela'];
-export type Player = (typeof PLAYERS)[number];
+// O Rogério entrou em 19/10 e saiu em 26/10: o nome continua no tipo (os dados dele
+// ficam guardados no banco), mas ele não aparece mais no placar, no login nem nos desafios.
+const EVERYONE = ['Paulo', 'Arthur', 'Rafaela', 'Rogério'] as const;
+export type Player = (typeof EVERYONE)[number];
+/** Quem está no desafio. */
+export const PLAYERS: Player[] = ['Paulo', 'Arthur', 'Rafaela'];
+/** Os 3 do começo (desafios do grupo antigos, sem a lista de participantes). */
+export const FOUNDERS: Player[] = PLAYERS;
+export const inGame = (p: Player) => PLAYERS.includes(p);
 
 export const START = '2026-10-19';
 export const END = '2026-12-20';
-export const PRIZE = 'R$ 400';
+export const PRIZE = 'R$ 300';
 export const JOKERS = 2;
 export const DEFAULT_WATER_GOAL_ML = 3000;
 /**
@@ -225,7 +230,7 @@ export const num = (n: number, digits = 1) =>
 /** Liga o nome do perfil a um dos jogadores (sem acento, só o primeiro nome). */
 export function playerFromName(name?: string | null): Player | null {
   const first = (name || '').trim().split(/\s+/)[0]?.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  return PLAYERS.find((p) => slug(p) === first) ?? null;
+  return EVERYONE.find((p) => slug(p) === first) ?? null; // o Rogério continua sendo ele (e não vê "quem é você?")
 }
 
 /** "Rogério" → "rogerio" (sem acento, minúsculo): usado no e-mail interno da conta. */

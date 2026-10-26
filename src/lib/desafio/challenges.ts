@@ -1,7 +1,7 @@
 // Mini-desafios do grupo. Regra principal: só começa quando TODOS os participantes aceitam;
 // se alguém recusa, o desafio é cancelado. Funções puras, sem React.
 
-import { FOUNDERS, daysBetween, habitDone, isPerfect, parseYmd, ymd, type DayRecord, type Player } from './rules';
+import { FOUNDERS, PLAYERS, daysBetween, habitDone, isPerfect, parseYmd, ymd, type DayRecord, type Player } from './rules';
 
 export type Metric = 'doce' | 'agua' | 'treino' | 'perfeito' | 'passos' | 'cardio';
 
@@ -41,7 +41,8 @@ export const endOf = (c: Challenge) => {
   return ymd(d);
 };
 
-export const playersOf = (c: Challenge): Player[] => c.players ?? FOUNDERS;
+// quem saiu do desafio (Rogério) sai também dos desafios do grupo, até dos que já estavam valendo
+export const playersOf = (c: Challenge): Player[] => (c.players ?? FOUNDERS).filter((p) => PLAYERS.includes(p));
 export const allIn = (c: Challenge) => playersOf(c).every((p) => c.accepted.includes(p));
 
 /** Situação do desafio do ponto de vista de quem está olhando. */

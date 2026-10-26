@@ -30,6 +30,7 @@ import {
   isSunday,
   num,
   ymd,
+  type Player,
 } from '@/lib/desafio/rules';
 
 // Placar do campeonato. Ordem: pontos (dias perfeitos, bônus, sequência e desafios do
@@ -53,13 +54,13 @@ const Achievements = () => {
 
   const started = d.today >= START;
   const left = Math.max(0, daysBetween(d.today, END));
-  const statsOf = (p: (typeof PLAYERS)[number]) => {
+  const statsOf = (p: Player) => {
     if (p === d.player) return stats(d.days, d.today, p, d.weights, challengePoints(ch.list, p, (x) => d.days[x], d.today));
     const o = everyone.data[p];
     return o ? stats(o.days, d.today, p, o.weights, challengePoints(ch.list, p, (x) => o.days[x], d.today)) : null;
   };
-  const todayOf = (p: (typeof PLAYERS)[number]) => (p === d.player ? d.record(d.today) : everyone.data[p]?.days[d.today]);
-  const userIdOf = (p: (typeof PLAYERS)[number]) => (p === d.player ? user?.id : everyone.data[p]?.userId);
+  const todayOf = (p: Player) => (p === d.player ? d.record(d.today) : everyone.data[p]?.days[d.today]);
+  const userIdOf = (p: Player) => (p === d.player ? user?.id : everyone.data[p]?.userId);
   const rows = PLAYERS.map((p) => ({ p, s: statsOf(p) })).sort(
     (a, b) => (b.s?.pts ?? -1) - (a.s?.pts ?? -1) || (b.s?.pct ?? 0) - (a.s?.pct ?? 0),
   );
@@ -75,7 +76,7 @@ const Achievements = () => {
           <div className="rounded-3xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent border border-primary/20 p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Desafio dos 4</p>
+                <p className="text-xs text-muted-foreground">Desafio dos 3</p>
                 <h1 className="text-2xl font-bold text-foreground">Placar</h1>
               </div>
               <span className="rounded-full bg-foreground text-background text-xs font-bold px-3 py-1">{PRIZE}</span>

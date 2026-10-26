@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '@/components/app/AppLayout';
 import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { shrinkPhoto } from '@/lib/desafio/localStore';
+import { photoError, shrinkPhotos } from '@/lib/desafio/localStore';
 import { getMealPhotos, removeMealPhotos, retryPendingPhotos, saveMealPhotos } from '@/lib/desafio/mealCloud';
 
 // Refeições: diário de fotos do que comeu, com uma anotação opcional.
@@ -377,9 +377,9 @@ function PhotoPicker({ photos, onChange }: { photos: Blob[]; onChange: (p: Blob[
     const list = [...files].slice(0, MAX_PHOTOS - photos.length);
     setBusy(true);
     try {
-      onChange([...photos, ...(await Promise.all(list.map((f) => shrinkPhoto(f))))]);
-    } catch {
-      toast.error('Não consegui ler essa foto');
+      onChange([...photos, ...(await shrinkPhotos(list))]);
+    } catch (e) {
+      toast.error(photoError(list[0], e), { duration: 12000 });
     } finally {
       setBusy(false);
     }

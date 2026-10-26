@@ -245,8 +245,9 @@ export function useDesafio() {
   const markWithProof = useCallback(
     async (date: string, kind: ProofKind, photos: Blob[]) => {
       if (!userId || date > today || !photos.length) return false;
-      if (!(await uploadProofs(userId, date, kind, photos))) {
-        toast.error('Não enviou a prova, confira a internet');
+      const up = await uploadProofs(userId, date, kind, photos);
+      if (up !== true) {
+        toast.error(`Não enviou a prova: ${up}`, { duration: 15000 });
         return false;
       }
       if (kind === 'treino' && !trained.has(date)) {

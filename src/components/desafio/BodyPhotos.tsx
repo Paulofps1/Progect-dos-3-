@@ -7,7 +7,7 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { useDesafio } from '@/hooks/useDesafio';
-import { shrinkPhoto } from '@/lib/desafio/localStore';
+import { photoError, shrinkPhoto } from '@/lib/desafio/localStore';
 import { IS_DEMO } from '@/lib/desafio/remote';
 import { INITIAL_WEIGHTS, num, todayStr } from '@/lib/desafio/rules';
 import { toast } from 'sonner';
@@ -71,8 +71,8 @@ export function BodyPhotos({ userId, d }: { userId: string; d: D }) {
     if (!file) return;
     try {
       setDraft(await shrinkPhoto(file, 1400));
-    } catch {
-      toast.error('Não consegui ler essa foto');
+    } catch (e) {
+      toast.error(photoError(file, e), { duration: 12000 });
     }
   };
 

@@ -16,7 +16,7 @@ import { challengePoints } from '@/lib/desafio/challenges';
 import type { ProofKind } from '@/lib/desafio/proofs';
 import { CORE, ITEM_PTS, PARTIAL_FROM, PERFECT_EXTRA, PLAYERS, bonusOf, habitDone, ledger, type DayRecord, type LedgerDay, type Player } from '@/lib/desafio/rules';
 
-// Extrato de pontos: de onde veio cada ponto, dia a dia, de você ou de qualquer um dos 4.
+// Extrato de pontos: de onde veio cada ponto, dia a dia, de você ou de qualquer um dos 3.
 // Tocar num dia mostra a conta e as fotos de prova (caminhada) daquele dia.
 
 /** 1,5 · 0,75 · 2 (sem zeros sobrando) */

@@ -22,7 +22,7 @@ async function names(userId: string, date: string, kind: ProofKind) {
   return (data || []).map((f) => f.name).filter(isOf(kind)).sort();
 }
 
-/** Junta as fotos às que já existem naquele dia (não apaga as anteriores). */
+/** Junta as fotos às que já existem naquele dia (não apaga as anteriores). Erro = texto do motivo. */
 export async function uploadProofs(userId: string, date: string, kind: ProofKind, photos: Blob[]) {
   if (IS_DEMO) {
     const k = demoKey(userId, date, kind);
@@ -34,7 +34,7 @@ export async function uploadProofs(userId: string, date: string, kind: ProofKind
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(`${folder(userId, date)}/${kind}-${stamp}-${i}.jpg`, photos[i], { upsert: true, contentType: 'image/jpeg' });
-    if (error) return false;
+    if (error) return `${(error as { statusCode?: string }).statusCode ?? ''} ${error.message}`.trim();
   }
   return true;
 }

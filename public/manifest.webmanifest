@@ -1,7 +1,7 @@
 {
-  "name": "Desafio dos 4",
+  "name": "Desafio dos 3",
   "short_name": "Desafio",
-  "description": "Desafio de emagrecimento entre Paulo, Arthur, Rafaela e Rogério.",
+  "description": "Desafio de emagrecimento entre Paulo, Arthur e Rafaela.",
   "lang": "pt-BR",
   "start_url": "/dashboard",
   "scope": "/",

@@ -73,9 +73,9 @@ const Auth = () => {
             <span className="text-3xl font-extrabold text-primary-foreground">4</span>
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-4">19/10 a 20/12 · 9 semanas</p>
-          <h1 className="text-3xl font-bold text-foreground mt-1">Desafio dos 4</h1>
+          <h1 className="text-3xl font-bold text-foreground mt-1">Desafio dos 3</h1>
           <p className="text-foreground/80 mt-2 text-sm leading-relaxed max-w-[18rem]">
-            Paulo, Arthur, Rafaela e Rogério. Quem somar mais pontos até 20/12 leva os <b className="text-foreground">{PRIZE}</b>.
+            Paulo, Arthur e Rafaela. Quem somar mais pontos até 20/12 leva os <b className="text-foreground">{PRIZE}</b>.
           </p>
         </motion.div>
 

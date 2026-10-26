@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Camera, ImageIcon, Loader2, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { shrinkPhoto } from '@/lib/desafio/localStore';
+import { photoError, shrinkPhotos } from '@/lib/desafio/localStore';
 import { proofFiles, removeProof, type ProofKind } from '@/lib/desafio/proofs';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -76,10 +76,10 @@ export function ProofSheet({ kind, date, onClose, onSend, onUnmark }: Props) {
     if (!files?.length) return;
     const list = [...files].slice(0, MAX - photos.length);
     try {
-      const shrunk = await Promise.all(list.map((f) => shrinkPhoto(f, 1200)));
+      const shrunk = await shrinkPhotos(list, 1200);
       setPhotos((cur) => [...cur, ...shrunk]);
-    } catch {
-      toast.error('Não consegui ler essa foto');
+    } catch (e) {
+      toast.error(photoError(list[0], e), { duration: 12000 });
     }
   };
 

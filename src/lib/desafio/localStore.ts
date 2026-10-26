@@ -87,20 +87,55 @@ export const mealPhotos = {
 };
 
 /** Reduz a foto no aparelho (lado maior até 1000 px, JPEG) antes de guardar. */
-export function shrinkPhoto(file: File, max = 1000): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const s = Math.min(1, max / Math.max(img.width, img.height));
+/**
+ * Reduz a foto para JPEG. No iPhone, abrir várias fotos grandes ao mesmo tempo pode
+ * estourar a memória (o toBlob volta vazio): por isso quem chama usa shrinkPhotos,
+ * que faz uma por vez. Se a imagem não abrir pelo <img>, tenta createImageBitmap.
+ */
+export async function shrinkPhoto(file: Blob, max = 1000): Promise<Blob> {
+  const draw = (src: CanvasImageSource, w: number, h: number) =>
+    new Promise<Blob>((resolve, reject) => {
+      const s = Math.min(1, max / Math.max(w, h));
       const c = document.createElement('canvas');
-      c.width = Math.round(img.width * s);
-      c.height = Math.round(img.height * s);
-      c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      c.toBlob((b) => (b ? resolve(b) : reject(new Error('falha ao reduzir'))), 'image/jpeg', 0.75);
-    };
-    img.onerror = () => reject(new Error('imagem inválida'));
-    img.src = url;
-  });
+      c.width = Math.max(1, Math.round(w * s));
+      c.height = Math.max(1, Math.round(h * s));
+      c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height);
+      c.toBlob((b) => {
+        c.width = c.height = 0; // devolve a memória já (importante no iPhone)
+        if (b) resolve(b);
+        else reject(new Error('falha ao reduzir'));
+      }, 'image/jpeg', 0.75);
+    });
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = 'async';
+    await new Promise<void>((ok, fail) => {
+      img.onload = () => ok();
+      img.onerror = () => fail(new Error('imagem inválida'));
+      img.src = url;
+    });
+    return await draw(img, img.naturalWidth, img.naturalHeight);
+  } catch (e) {
+    if (typeof createImageBitmap !== 'function') throw e;
+    const bmp = await createImageBitmap(file);
+    try {
+      return await draw(bmp, bmp.width, bmp.height);
+    } finally {
+      bmp.close();
+    }
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
+
+/** Várias fotos, uma de cada vez (ver shrinkPhoto). */
+export async function shrinkPhotos(files: Blob[], max?: number): Promise<Blob[]> {
+  const out: Blob[] = [];
+  for (const f of files) out.push(await shrinkPhoto(f, max));
+  return out;
+}
+
+/** Texto curto do problema da foto, para o print chegar com o motivo. */
+export const photoError = (file: Blob | undefined, e: unknown) =>
+  `Não consegui ler essa foto${file?.type ? ` (${file.type})` : ''}: ${e instanceof Error ? e.message : String(e)}`;
