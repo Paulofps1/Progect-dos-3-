@@ -83,7 +83,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     };
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => apply(s));
-    supabase.auth.getSession().then(({ data: { session: s } }) => apply(s));
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      apply(s);
+      // A sessão guardada no aparelho pode ter caído (o banco não reconhece mais). Aí
+      // tudo que depende do login falha calado (fotos dão "Bucket not found"). Confere
+      // no servidor; se ele recusar, sai e manda para a tela de entrar de novo.
+      if (s)
+        supabase.auth.getUser().then(({ error }) => {
+          if (error && (error.status === 401 || error.status === 403 || /jwt|session|token|user/i.test(error.message))) {
+            supabase.auth.signOut({ scope: 'local' }).then(() => apply(null));
+          }
+        });
+    });
     return () => subscription.unsubscribe();
   }, []);
 

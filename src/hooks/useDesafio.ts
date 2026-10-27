@@ -245,7 +245,16 @@ export function useDesafio() {
   const markWithProof = useCallback(
     async (date: string, kind: ProofKind, photos: Blob[]) => {
       if (!userId || date > today || !photos.length) return false;
-      const up = await uploadProofs(userId, date, kind, photos);
+      let up = await uploadProofs(userId, date, kind, photos);
+      if (up !== true && /bucket not found|jwt|unauthorized|403|401/i.test(up)) {
+        // quase sempre é a entrada (login) que venceu no aparelho: renova e tenta de novo
+        const { error } = await supabase.auth.refreshSession();
+        if (!error) up = await uploadProofs(userId, date, kind, photos);
+        else {
+          toast.error('Sua entrada no app caiu neste celular. Vá em Perfil › Sair e entre de novo com seu nome.', { duration: 15000 });
+          return false;
+        }
+      }
       if (up !== true) {
         toast.error(`Não enviou a prova: ${up}`, { duration: 15000 });
         return false;
